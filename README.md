@@ -6,10 +6,6 @@ Tarot Card Shuffle Draw is a web application that simulates a tarot card reading
   - [Features](#features)
   - [Deployment](#deployment)
   - [API test with CURL](#api-test-with-curl)
-- [Test preflight request (OPTIONS)](#test-preflight-request-options)
-- [Test GET /](#test-get-)
-- [Test POST /draw](#test-post-draw)
-- [Test GET /license](#test-get-license)
   - [Check API Gateway](#check-api-gateway)
   - [Usage](#usage)
     - [Web Interface](#web-interface)
@@ -34,6 +30,7 @@ sam deploy \
 
 ## API test with CURL
 
+```bash
 # Test preflight request (OPTIONS)
 curl -i -X OPTIONS https://${API_ID}.execute-api.eu-west-2.amazonaws.com/Prod/draw -H "Origin: https://your-frontend.com" -H "Access-Control-Request-Method: POST"
 
@@ -45,6 +42,7 @@ curl -i -X POST https://${API_ID}.execute-api.eu-west-2.amazonaws.com/Prod/draw 
 
 # Test GET /license
 curl -i -X GET https://${API_ID}.execute-api.eu-west-2.amazonaws.com/Prod/license
+```
 
 ## Check API Gateway
 
