@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AWS SAM template to deploy a GoLang Lambda function using Gin framework.
+
+Globals:
+  Function:
+    Runtime: provided.al2023
+    Timeout: 10
+
+Resources:
+  TarotDrawFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: TarotDrawFunction
+      Handler: main
+      CodeUri: .
+      MemorySize: 128
+      Environment:
+        Variables:
+          GIN_MODE: release
+      Events:
+        RootGet:
+          Type: Api
+          Properties:
+            Path: /
+            Method: GET
+        DrawPost:
+          Type: Api
+          Properties:
+            Path: /draw
+            Method: POST
+        LicenseGet:
+          Type: Api
+          Properties:
+            Path: /license
+            Method: GET
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  TarotDrawFunctionArn:
+    Description: "Tarot Draw Function ARN"
+    Value: !GetAtt TarotDrawFunction.Arn

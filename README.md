@@ -1,8 +1,20 @@
-# Tarot Card Shuffle Draw
+# Tarot Card Shuffle Lambda
+
+sam build && \
+sam deploy \
+    --stack-name TarotCardDrawApp \
+    --capabilities CAPABILITY_IAM \
+    --region eu-west-2 \
+    --resolve-s3
+
+
+sam delete --stack-name TarotCardDrawApp --region eu-west-2
+
+--------------
 
 Tarot Card Shuffle Draw is a web application that simulates a tarot card reading. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. 
 
-- [Tarot Card Shuffle Draw](#tarot-card-shuffle-draw)
+- [Tarot Card Shuffle Lambda](#tarot-card-shuffle-lambda)
   - [Features](#features)
   - [Getting Started](#getting-started)
     - [Running the Application Locally](#running-the-application-locally)

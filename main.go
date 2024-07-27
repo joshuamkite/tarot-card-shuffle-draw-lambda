@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,6 +18,146 @@ type tarotDeck struct {
 	NameSuit string `json:"nameSuit"`
 	Reversed string `json:"reversed"`
 	Image    string `json:"image"`
+}
+
+var ginLambda *ginadapter.GinLambda
+
+func main() {
+	// Set Gin mode to release
+	gin.SetMode(gin.ReleaseMode)
+
+	router := gin.Default()
+	router.Static("/static", "./static")
+	router.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+	})
+	router.LoadHTMLGlob("templates/*")
+
+	router.GET("/", showOptionsPage)
+	router.POST("/draw", handleDraw)
+	router.GET("/license", showLicensePage)
+
+	ginLambda = ginadapter.New(router)
+
+	lambda.Start(Handler)
+}
+
+func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	return ginLambda.Proxy(req)
+}
+
+func showOptionsPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "options.html", nil)
+}
+
+func handleDraw(c *gin.Context) {
+	deckSize := c.PostForm("deckSize")
+	deckReverse := c.PostForm("deckReverse")
+	numCards, err := strconv.Atoi(c.PostForm("numCards"))
+	if err != nil || numCards < 1 {
+		numCards = 8
+	}
+
+	decks := getDeck(deckSize, deckReverse)
+	totalCards := len(decks)
+
+	message := ""
+	if numCards > totalCards {
+		numCards = totalCards
+		message = "There are no more cards to display."
+	}
+
+	shuffledDeck := shuffle(decks)
+	drawnCards := shuffledDeck[:numCards]
+
+	c.HTML(http.StatusOK, "result.html", gin.H{
+		"drawnCards": drawnCards,
+		"message":    message,
+	})
+}
+
+func showLicensePage(c *gin.Context) {
+	c.HTML(http.StatusOK, "license.html", nil)
+}
+
+func getDeck(deckSize, deckReverse string) []tarotDeck {
+	var decks []tarotDeck
+	switch deckSize {
+	case "Major Arcana only":
+		decks = majorArcana()
+	case "Minor Arcana only":
+		decks = minorArcana()
+	case "Full Deck":
+		decks = append(majorArcana(), minorArcana()...)
+	}
+
+	if deckReverse == "Upright and reversed" {
+		decks = includeReversed(decks)
+	}
+
+	return decks
+}
+
+func majorArcana() []tarotDeck {
+	var majorArcana []tarotDeck
+	for key, value := range majorCards {
+		majorArcana = append(majorArcana, tarotDeck{
+			Number:   key,
+			NameSuit: value,
+			Image:    filepath.Join("/static/images", majorImages[key]),
+		})
+	}
+	return majorArcana
+}
+
+func minorArcana() []tarotDeck {
+	var minorArcana []tarotDeck
+	for suit, fullSuitName := range minorSuits {
+		for number, fullNumberName := range minorCards {
+			key := suit + number
+			minorArcana = append(minorArcana, tarotDeck{
+				Number:   fullNumberName,
+				NameSuit: "of " + fullSuitName,
+				Image:    filepath.Join("/static/images", minorImages[key]),
+			})
+		}
+	}
+	return minorArcana
+}
+
+func includeReversed(decks []tarotDeck) []tarotDeck {
+	var newDecks []tarotDeck
+	for i := range decks {
+		b := make([]byte, 1)
+		rand.Read(b)
+		if b[0]%2 == 0 {
+			newDecks = append(newDecks, tarotDeck{
+				Number:   decks[i].Number,
+				NameSuit: decks[i].NameSuit,
+				Image:    decks[i].Image,
+			})
+		} else {
+			newDecks = append(newDecks, tarotDeck{
+				Number:   decks[i].Number,
+				NameSuit: decks[i].NameSuit,
+				Reversed: "(Reversed)",
+				Image:    decks[i].Image,
+			})
+		}
+	}
+	return newDecks
+}
+
+func shuffle(decks []tarotDeck) []tarotDeck {
+	for i := range decks {
+		b := make([]byte, 1)
+		rand.Read(b)
+		j := int(b[0]) % (i + 1)
+		decks[i], decks[j] = decks[j], decks[i]
+	}
+	return decks
 }
 
 var majorCards = map[string]string{
@@ -148,136 +291,4 @@ var minorImages = map[string]string{
 	"Wands12":  "Wands12.jpg",
 	"Wands13":  "Wands13.jpg",
 	"Wands14":  "Wands14.jpg",
-}
-
-func main() {
-	// Set Gin mode to release
-	gin.SetMode(gin.ReleaseMode)
-
-	router := gin.Default()
-	router.Static("/static", "./static")
-	router.SetFuncMap(template.FuncMap{
-		"add": func(a, b int) int {
-			return a + b
-		},
-	})
-	router.LoadHTMLGlob("templates/*")
-
-	router.GET("/", showOptionsPage)
-	router.POST("/draw", handleDraw)
-	router.GET("/license", showLicensePage)
-
-	router.Run(":80")
-}
-
-func showOptionsPage(c *gin.Context) {
-	c.HTML(http.StatusOK, "options.html", nil)
-}
-
-func handleDraw(c *gin.Context) {
-	deckSize := c.PostForm("deckSize")
-	deckReverse := c.PostForm("deckReverse")
-	numCards, err := strconv.Atoi(c.PostForm("numCards"))
-	if err != nil || numCards < 1 {
-		numCards = 8
-	}
-
-	decks := getDeck(deckSize, deckReverse)
-	totalCards := len(decks)
-
-	message := ""
-	if numCards > totalCards {
-		numCards = totalCards
-		message = "There are no more cards to display."
-	}
-
-	shuffledDeck := shuffle(decks)
-	drawnCards := shuffledDeck[:numCards]
-
-	c.HTML(http.StatusOK, "result.html", gin.H{
-		"drawnCards": drawnCards,
-		"message":    message,
-	})
-}
-
-func showLicensePage(c *gin.Context) {
-	c.HTML(http.StatusOK, "license.html", nil)
-}
-
-func getDeck(deckSize, deckReverse string) []tarotDeck {
-	var decks []tarotDeck
-	switch deckSize {
-	case "Major Arcana only":
-		decks = majorArcana()
-	case "Minor Arcana only":
-		decks = minorArcana()
-	case "Full Deck":
-		decks = append(majorArcana(), minorArcana()...)
-	}
-
-	if deckReverse == "Upright and reversed" {
-		decks = includeReversed(decks)
-	}
-
-	return decks
-}
-
-func majorArcana() []tarotDeck {
-	var majorArcana []tarotDeck
-	for key, value := range majorCards {
-		majorArcana = append(majorArcana, tarotDeck{
-			Number:   key,
-			NameSuit: value,
-			Image:    filepath.Join("/static/images", majorImages[key]),
-		})
-	}
-	return majorArcana
-}
-
-func minorArcana() []tarotDeck {
-	var minorArcana []tarotDeck
-	for suit, fullSuitName := range minorSuits {
-		for number, fullNumberName := range minorCards {
-			key := suit + number
-			minorArcana = append(minorArcana, tarotDeck{
-				Number:   fullNumberName,
-				NameSuit: "of " + fullSuitName,
-				Image:    filepath.Join("/static/images", minorImages[key]),
-			})
-		}
-	}
-	return minorArcana
-}
-
-func includeReversed(decks []tarotDeck) []tarotDeck {
-	var newDecks []tarotDeck
-	for i := range decks {
-		b := make([]byte, 1)
-		rand.Read(b)
-		if b[0]%2 == 0 {
-			newDecks = append(newDecks, tarotDeck{
-				Number:   decks[i].Number,
-				NameSuit: decks[i].NameSuit,
-				Image:    decks[i].Image,
-			})
-		} else {
-			newDecks = append(newDecks, tarotDeck{
-				Number:   decks[i].Number,
-				NameSuit: decks[i].NameSuit,
-				Reversed: "(Reversed)",
-				Image:    decks[i].Image,
-			})
-		}
-	}
-	return newDecks
-}
-
-func shuffle(decks []tarotDeck) []tarotDeck {
-	for i := range decks {
-		b := make([]byte, 1)
-		rand.Read(b)
-		j := int(b[0]) % (i + 1)
-		decks[i], decks[j] = decks[j], decks[i]
-	}
-	return decks
 }
