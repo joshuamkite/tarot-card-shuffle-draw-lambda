@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/cors"
 )
 
 type tarotDeck struct {
@@ -27,6 +29,24 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
+
+	// Middleware to handle CORS using rs/cors
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
+
+	router.Use(func(c *gin.Context) {
+		corsMiddleware.HandlerFunc(c.Writer, c.Request)
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+
 	router.Static("/static", "./static")
 	router.SetFuncMap(template.FuncMap{
 		"add": func(a, b int) int {
@@ -39,14 +59,20 @@ func main() {
 	router.POST("/draw", handleDraw)
 	router.GET("/license", showLicensePage)
 
+	// Initialize ginLambda with the router
 	ginLambda = ginadapter.New(router)
 
+	// Start the Lambda function
 	lambda.Start(Handler)
 }
 
 func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	// Log the incoming request for debugging
+	log.Printf("Received request: %+v", req)
+
 	resp, err := ginLambda.Proxy(req)
 	if err != nil {
+		log.Printf("Error processing request: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       err.Error(),
