@@ -45,7 +45,28 @@ func main() {
 }
 
 func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	return ginLambda.Proxy(req)
+	resp, err := ginLambda.Proxy(req)
+	if err != nil {
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       err.Error(),
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+				"Access-Control-Allow-Headers": "Content-Type,Authorization",
+			},
+		}, nil
+	}
+
+	// Add CORS headers to the response
+	if resp.Headers == nil {
+		resp.Headers = make(map[string]string)
+	}
+	resp.Headers["Access-Control-Allow-Origin"] = "*"
+	resp.Headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+	resp.Headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+
+	return resp, nil
 }
 
 func showOptionsPage(c *gin.Context) {

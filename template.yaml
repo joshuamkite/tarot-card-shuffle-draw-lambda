@@ -7,6 +7,11 @@ Globals:
   Function:
     Runtime: provided.al2023
     Timeout: 10
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowHeaders: "'content-type'"
+      AllowOrigin: "'*'"
 
 Resources:
   TarotDrawFunction:
