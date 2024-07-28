@@ -31,17 +31,16 @@ sam deploy \
 ## API test with CURL
 
 ```bash
-# Test preflight request (OPTIONS)
-curl -i -X OPTIONS https://${API_ID}.execute-api.eu-west-2.amazonaws.com/Prod/draw -H "Origin: https://your-frontend.com" -H "Access-Control-Request-Method: POST"
+
 
 # Test GET /
-curl -i -X GET https://${API_ID}.execute-api.eu-west-2.amazonaws.com/Prod/
+curl -i -X GET https://ypo33qaaf5.execute-api.eu-west-2.amazonaws.com/
 
 # Test POST /draw
-curl -i -X POST https://${API_ID}.execute-api.eu-west-2.amazonaws.com/Prod/draw -H "Content-Type: application/json" -d '{}'
+curl -i -X POST https://ypo33qaaf5.execute-api.eu-west-2.amazonaws.com/draw -H "Content-Type: application/json" -d '{}'
 
 # Test GET /license
-curl -i -X GET https://${API_ID}.execute-api.eu-west-2.amazonaws.com/Prod/license
+curl -i -X GET https://ypo33qaaf5.execute-api.eu-west-2.amazonaws.com/license
 
 
 

@@ -8,16 +8,10 @@ BUILD_DIR = $(ARTIFACTS_DIR)
 all: build
 
 # Build the binary for the specific function
-build-TarotDrawFunction:
+build-DrawFunction:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(BUILD_DIR)/$(BINARY)
-	cp -r templates $(BUILD_DIR)/templates
-	cp -r static $(BUILD_DIR)/static
-	cp bootstrap $(BUILD_DIR)/bootstrap
-
-# Build the binary and copy necessary files
-build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(BUILD_DIR)/$(BINARY)
-	cp -r templates $(BUILD_DIR)/templates
+	mkdir -p $(BUILD_DIR)/templates
+	cp templates/result.html $(BUILD_DIR)/templates/result.html
 	cp -r static $(BUILD_DIR)/static
 	cp bootstrap $(BUILD_DIR)/bootstrap
 

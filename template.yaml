@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  AWS SAM template to deploy a GoLang Lambda function using Gin framework.
+  AWS SAM template to deploy GoLang Lambda functions using Gin framework.
 
 Globals:
   Function:
@@ -9,12 +9,12 @@ Globals:
     Timeout: 10
 
 Resources:
-  TarotDrawFunction:
+  OptionsPageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: TarotDrawFunction
+      FunctionName: OptionsPageFunction
       Handler: main
-      CodeUri: .
+      CodeUri: ./optionsPage
       MemorySize: 128
       Policies:
         - AWSLambdaBasicExecutionRole
@@ -25,13 +25,35 @@ Resources:
             Path: /
             Method: GET
             ApiId: !Ref TarotApi
+
+  DrawFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: DrawFunction
+      Handler: main
+      CodeUri: ./handleDraw
+      MemorySize: 128
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Events:
         DrawPost:
           Type: HttpApi
           Properties:
             Path: /draw
             Method: POST
             ApiId: !Ref TarotApi
-        LicenseGet:
+
+  LicensePageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: main
+      Runtime: provided.al2
+      CodeUri: licensePage/
+      MemorySize: 128
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Events:
+        LicensePage:
           Type: HttpApi
           Properties:
             Path: /license
@@ -45,6 +67,9 @@ Resources:
         AllowOrigins: "'*'"
         AllowHeaders: "'Content-Type'"
         AllowMethods: "'GET,POST,OPTIONS'"
+      AccessLogSettings:
+        DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
+        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
 
   ApiGatewayLogGroup:
     Type: AWS::Logs::LogGroup
@@ -58,6 +83,3 @@ Outputs:
   ApiUrl:
     Description: "HTTP API endpoint URL for the Prod stage"
     Value: !Sub "https://${TarotApi}.execute-api.${AWS::Region}.amazonaws.com/"
-  TarotDrawFunctionArn:
-    Description: "Tarot Draw Function ARN"
-    Value: !GetAtt TarotDrawFunction.Arn

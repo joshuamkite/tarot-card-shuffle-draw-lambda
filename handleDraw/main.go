@@ -2,7 +2,7 @@ package main
 
 import (
 	"crypto/rand"
-	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -18,6 +18,68 @@ type tarotDeck struct {
 	NameSuit string `json:"nameSuit"`
 	Reversed string `json:"reversed"`
 	Image    string `json:"image"`
+}
+
+var drawGinLambda *ginadapter.GinLambda
+
+func init() {
+	log.Printf("Gin cold start for handleDraw")
+	r := gin.Default()
+	r.Static("/static", "./static")
+	r.LoadHTMLGlob("templates/*")
+	r.POST("/draw", handleDraw)
+	drawGinLambda = ginadapter.New(r)
+}
+
+func main() {
+	gin.SetMode(gin.ReleaseMode)
+	lambda.Start(drawHandler)
+}
+
+func drawHandler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Printf("Received request: %+v", req)
+	resp, err := drawGinLambda.Proxy(req)
+	if err != nil {
+		log.Printf("Error processing request: %v", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       err.Error(),
+		}, nil
+	}
+	if resp.Headers == nil {
+		resp.Headers = map[string]string{}
+	}
+	resp.Headers["Content-Type"] = "text/html"
+	return resp, nil
+}
+
+func handleDraw(c *gin.Context) {
+	log.Printf("Processing draw request")
+	c.Header("Content-Type", "text/html")
+	deckSize := c.PostForm("deckSize")
+	deckReverse := c.PostForm("deckReverse")
+	numCards, err := strconv.Atoi(c.PostForm("numCards"))
+	if err != nil || numCards < 1 {
+		numCards = 8
+	}
+
+	decks := getDeck(deckSize, deckReverse)
+	totalCards := len(decks)
+
+	message := ""
+	if numCards > totalCards {
+		numCards = totalCards
+		message = "There are no more cards to display."
+	}
+
+	shuffledDeck := shuffle(decks)
+	drawnCards := shuffledDeck[:numCards]
+
+	c.HTML(http.StatusOK, "result.html", gin.H{
+		"drawnCards": drawnCards,
+		"message":    message,
+	})
+	log.Printf("Drawn cards: %+v", drawnCards)
 }
 
 var majorCards = map[string]string{
@@ -70,84 +132,6 @@ var minorImages = map[string]string{
 	"Wands07": "Wands07.jpg", "Wands08": "Wands08.jpg", "Wands09": "Tarot_Nine_of_Wands.jpg",
 	"Wands10": "Wands10.jpg", "Wands11": "Wands11.jpg", "Wands12": "Wands12.jpg",
 	"Wands13": "Wands13.jpg", "Wands14": "Wands14.jpg",
-}
-
-var ginLambda *ginadapter.GinLambda
-
-func main() {
-	// Set Gin mode to release
-	gin.SetMode(gin.ReleaseMode)
-
-	router := gin.Default()
-	router.Static("/static", "./static")
-	router.SetFuncMap(template.FuncMap{
-		"add": func(a, b int) int {
-			return a + b
-		},
-	})
-	router.LoadHTMLGlob("templates/*")
-
-	router.GET("/", showOptionsPage)
-	router.POST("/draw", handleDraw)
-	router.GET("/license", showLicensePage)
-
-	ginLambda = ginadapter.New(router)
-	lambda.Start(Handler)
-}
-
-func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	resp, err := ginLambda.Proxy(req)
-	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       err.Error(),
-		}, nil
-	}
-
-	// Ensure the content type is set correctly
-	if resp.Headers == nil {
-		resp.Headers = map[string]string{}
-	}
-	resp.Headers["Content-Type"] = "text/html"
-
-	return resp, nil
-}
-
-func showOptionsPage(c *gin.Context) {
-	c.Header("Content-Type", "text/html")
-	c.HTML(http.StatusOK, "options.html", nil)
-}
-
-func handleDraw(c *gin.Context) {
-	c.Header("Content-Type", "text/html")
-	deckSize := c.PostForm("deckSize")
-	deckReverse := c.PostForm("deckReverse")
-	numCards, err := strconv.Atoi(c.PostForm("numCards"))
-	if err != nil || numCards < 1 {
-		numCards = 8
-	}
-
-	decks := getDeck(deckSize, deckReverse)
-	totalCards := len(decks)
-
-	message := ""
-	if numCards > totalCards {
-		numCards = totalCards
-		message = "There are no more cards to display."
-	}
-
-	shuffledDeck := shuffle(decks)
-	drawnCards := shuffledDeck[:numCards]
-
-	c.HTML(http.StatusOK, "result.html", gin.H{
-		"drawnCards": drawnCards,
-		"message":    message,
-	})
-}
-
-func showLicensePage(c *gin.Context) {
-	c.Header("Content-Type", "text/html")
-	c.HTML(http.StatusOK, "license.html", nil)
 }
 
 func getDeck(deckSize, deckReverse string) []tarotDeck {
