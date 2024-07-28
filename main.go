@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/rand"
 	"html/template"
-	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -12,7 +11,6 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/cors"
 )
 
 type tarotDeck struct {
@@ -22,6 +20,58 @@ type tarotDeck struct {
 	Image    string `json:"image"`
 }
 
+var majorCards = map[string]string{
+	"I": "The Magician", "II": "The Papess", "III": "The Empress", "IV": "The Emperor",
+	"V": "The Heirophant", "VI": "The Lovers", "VII": "The Chariot", "VIII": "Justice",
+	"IX": "The Hermit", "X": "The Wheel Of Fortune", "XI": "Strength", "XII": "The Hanged Man",
+	"XIII": "Death", "XIV": "Temperance", "XV": "The Devil", "XVI": "The Tower",
+	"XVII": "The Star", "XVIII": "The Moon", "XIX": "The Sun", "XX": "The Last Judgment",
+	"XXI": "The World", "_": "The Fool",
+}
+
+var minorSuits = map[string]string{
+	"Cups": "Cups", "Wands": "Wands", "Swords": "Swords", "Pents": "Pentacles",
+}
+
+var minorCards = map[string]string{
+	"01": "Ace", "02": "Two", "03": "Three", "04": "Four", "05": "Five",
+	"06": "Six", "07": "Seven", "08": "Eight", "09": "Nine", "10": "Ten",
+	"11": "Page", "12": "Knight", "13": "Queen", "14": "King",
+}
+
+var majorImages = map[string]string{
+	"I": "RWS_Tarot_01_Magician.jpg", "II": "RWS_Tarot_02_High_Priestess.jpg", "III": "RWS_Tarot_03_Empress.jpg",
+	"IV": "RWS_Tarot_04_Emperor.jpg", "V": "RWS_Tarot_05_Hierophant.jpg", "VI": "RWS_Tarot_06_Lovers.jpg",
+	"VII": "RWS_Tarot_07_Chariot.jpg", "VIII": "RWS_Tarot_08_Strength.jpg", "IX": "RWS_Tarot_09_Hermit.jpg",
+	"X": "RWS_Tarot_10_Wheel_of_Fortune.jpg", "XI": "RWS_Tarot_11_Justice.jpg", "XII": "RWS_Tarot_12_Hanged_Man.jpg",
+	"XIII": "RWS_Tarot_13_Death.jpg", "XIV": "RWS_Tarot_14_Temperance.jpg", "XV": "RWS_Tarot_15_Devil.jpg",
+	"XVI": "RWS_Tarot_16_Tower.jpg", "XVII": "RWS_Tarot_17_Star.jpg", "XVIII": "RWS_Tarot_18_Moon.jpg",
+	"XIX": "RWS_Tarot_19_Sun.jpg", "XX": "RWS_Tarot_20_Judgement.jpg", "XXI": "RWS_Tarot_21_World.jpg",
+	"_": "RWS_Tarot_00_Fool.jpg",
+}
+
+var minorImages = map[string]string{
+	"Cups01": "Cups01.jpg", "Cups02": "Cups02.jpg", "Cups03": "Cups03.jpg",
+	"Cups04": "Cups04.jpg", "Cups05": "Cups05.jpg", "Cups06": "Cups06.jpg",
+	"Cups07": "Cups07.jpg", "Cups08": "Cups08.jpg", "Cups09": "Cups09.jpg",
+	"Cups10": "Cups10.jpg", "Cups11": "Cups11.jpg", "Cups12": "Cups12.jpg",
+	"Cups13": "Cups13.jpg", "Cups14": "Cups14.jpg", "Pents01": "Pents01.jpg",
+	"Pents02": "Pents02.jpg", "Pents03": "Pents03.jpg", "Pents04": "Pents04.jpg",
+	"Pents05": "Pents05.jpg", "Pents06": "Pents06.jpg", "Pents07": "Pents07.jpg",
+	"Pents08": "Pents08.jpg", "Pents09": "Pents09.jpg", "Pents10": "Pents10.jpg",
+	"Pents11": "Pents11.jpg", "Pents12": "Pents12.jpg", "Pents13": "Pents13.jpg",
+	"Pents14": "Pents14.jpg", "Swords01": "Swords01.jpg", "Swords02": "Swords02.jpg",
+	"Swords03": "Swords03.jpg", "Swords04": "Swords04.jpg", "Swords05": "Swords05.jpg",
+	"Swords06": "Swords06.jpg", "Swords07": "Swords07.jpg", "Swords08": "Swords08.jpg",
+	"Swords09": "Swords09.jpg", "Swords10": "Swords10.jpg", "Swords11": "Swords11.jpg",
+	"Swords12": "Swords12.jpg", "Swords13": "Swords13.jpg", "Swords14": "Swords14.jpg",
+	"Wands01": "Wands01.jpg", "Wands02": "Wands02.jpg", "Wands03": "Wands03.jpg",
+	"Wands04": "Wands04.jpg", "Wands05": "Wands05.jpg", "Wands06": "Wands06.jpg",
+	"Wands07": "Wands07.jpg", "Wands08": "Wands08.jpg", "Wands09": "Tarot_Nine_of_Wands.jpg",
+	"Wands10": "Wands10.jpg", "Wands11": "Wands11.jpg", "Wands12": "Wands12.jpg",
+	"Wands13": "Wands13.jpg", "Wands14": "Wands14.jpg",
+}
+
 var ginLambda *ginadapter.GinLambda
 
 func main() {
@@ -29,24 +79,6 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
-
-	// Middleware to handle CORS using rs/cors
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
-	})
-
-	router.Use(func(c *gin.Context) {
-		corsMiddleware.HandlerFunc(c.Writer, c.Request)
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-		c.Next()
-	})
-
 	router.Static("/static", "./static")
 	router.SetFuncMap(template.FuncMap{
 		"add": func(a, b int) int {
@@ -59,47 +91,35 @@ func main() {
 	router.POST("/draw", handleDraw)
 	router.GET("/license", showLicensePage)
 
-	// Initialize ginLambda with the router
 	ginLambda = ginadapter.New(router)
-
-	// Start the Lambda function
 	lambda.Start(Handler)
 }
 
 func Handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	// Log the incoming request for debugging
-	log.Printf("Received request: %+v", req)
-
 	resp, err := ginLambda.Proxy(req)
 	if err != nil {
-		log.Printf("Error processing request: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       err.Error(),
-			Headers: map[string]string{
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type,Authorization",
-			},
 		}, nil
 	}
 
-	// Add CORS headers to the response
+	// Ensure the content type is set correctly
 	if resp.Headers == nil {
-		resp.Headers = make(map[string]string)
+		resp.Headers = map[string]string{}
 	}
-	resp.Headers["Access-Control-Allow-Origin"] = "*"
-	resp.Headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
-	resp.Headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+	resp.Headers["Content-Type"] = "text/html"
 
 	return resp, nil
 }
 
 func showOptionsPage(c *gin.Context) {
+	c.Header("Content-Type", "text/html")
 	c.HTML(http.StatusOK, "options.html", nil)
 }
 
 func handleDraw(c *gin.Context) {
+	c.Header("Content-Type", "text/html")
 	deckSize := c.PostForm("deckSize")
 	deckReverse := c.PostForm("deckReverse")
 	numCards, err := strconv.Atoi(c.PostForm("numCards"))
@@ -126,6 +146,7 @@ func handleDraw(c *gin.Context) {
 }
 
 func showLicensePage(c *gin.Context) {
+	c.Header("Content-Type", "text/html")
 	c.HTML(http.StatusOK, "license.html", nil)
 }
 
@@ -205,137 +226,4 @@ func shuffle(decks []tarotDeck) []tarotDeck {
 		decks[i], decks[j] = decks[j], decks[i]
 	}
 	return decks
-}
-
-var majorCards = map[string]string{
-	"I":     "The Magician",
-	"II":    "The Papess",
-	"III":   "The Empress",
-	"IV":    "The Emperor",
-	"V":     "The Heirophant",
-	"VI":    "The Lovers",
-	"VII":   "The Chariot",
-	"VIII":  "Justice",
-	"IX":    "The Hermit",
-	"X":     "The Wheel Of Fortune",
-	"XI":    "Strength",
-	"XII":   "The Hanged Man",
-	"XIII":  "Death",
-	"XIV":   "Temperance",
-	"XV":    "The Devil",
-	"XVI":   "The Tower",
-	"XVII":  "The Star",
-	"XVIII": "The Moon",
-	"XIX":   "The Sun",
-	"XX":    "The Last Judgment",
-	"XXI":   "The World",
-	"_":     "The Fool",
-}
-
-var minorSuits = map[string]string{
-	"Cups":   "Cups",
-	"Wands":  "Wands",
-	"Swords": "Swords",
-	"Pents":  "Pentacles",
-}
-
-var minorCards = map[string]string{
-	"01": "Ace",
-	"02": "Two",
-	"03": "Three",
-	"04": "Four",
-	"05": "Five",
-	"06": "Six",
-	"07": "Seven",
-	"08": "Eight",
-	"09": "Nine",
-	"10": "Ten",
-	"11": "Page",
-	"12": "Knight",
-	"13": "Queen",
-	"14": "King",
-}
-
-var majorImages = map[string]string{
-	"I":     "RWS_Tarot_01_Magician.jpg",
-	"II":    "RWS_Tarot_02_High_Priestess.jpg",
-	"III":   "RWS_Tarot_03_Empress.jpg",
-	"IV":    "RWS_Tarot_04_Emperor.jpg",
-	"V":     "RWS_Tarot_05_Hierophant.jpg",
-	"VI":    "RWS_Tarot_06_Lovers.jpg",
-	"VII":   "RWS_Tarot_07_Chariot.jpg",
-	"VIII":  "RWS_Tarot_08_Strength.jpg",
-	"IX":    "RWS_Tarot_09_Hermit.jpg",
-	"X":     "RWS_Tarot_10_Wheel_of_Fortune.jpg",
-	"XI":    "RWS_Tarot_11_Justice.jpg",
-	"XII":   "RWS_Tarot_12_Hanged_Man.jpg",
-	"XIII":  "RWS_Tarot_13_Death.jpg",
-	"XIV":   "RWS_Tarot_14_Temperance.jpg",
-	"XV":    "RWS_Tarot_15_Devil.jpg",
-	"XVI":   "RWS_Tarot_16_Tower.jpg",
-	"XVII":  "RWS_Tarot_17_Star.jpg",
-	"XVIII": "RWS_Tarot_18_Moon.jpg",
-	"XIX":   "RWS_Tarot_19_Sun.jpg",
-	"XX":    "RWS_Tarot_20_Judgement.jpg",
-	"XXI":   "RWS_Tarot_21_World.jpg",
-	"_":     "RWS_Tarot_00_Fool.jpg",
-}
-
-var minorImages = map[string]string{
-	"Cups01":   "Cups01.jpg",
-	"Cups02":   "Cups02.jpg",
-	"Cups03":   "Cups03.jpg",
-	"Cups04":   "Cups04.jpg",
-	"Cups05":   "Cups05.jpg",
-	"Cups06":   "Cups06.jpg",
-	"Cups07":   "Cups07.jpg",
-	"Cups08":   "Cups08.jpg",
-	"Cups09":   "Cups09.jpg",
-	"Cups10":   "Cups10.jpg",
-	"Cups11":   "Cups11.jpg",
-	"Cups12":   "Cups12.jpg",
-	"Cups13":   "Cups13.jpg",
-	"Cups14":   "Cups14.jpg",
-	"Pents01":  "Pents01.jpg",
-	"Pents02":  "Pents02.jpg",
-	"Pents03":  "Pents03.jpg",
-	"Pents04":  "Pents04.jpg",
-	"Pents05":  "Pents05.jpg",
-	"Pents06":  "Pents06.jpg",
-	"Pents07":  "Pents07.jpg",
-	"Pents08":  "Pents08.jpg",
-	"Pents09":  "Pents09.jpg",
-	"Pents10":  "Pents10.jpg",
-	"Pents11":  "Pents11.jpg",
-	"Pents12":  "Pents12.jpg",
-	"Pents13":  "Pents13.jpg",
-	"Pents14":  "Pents14.jpg",
-	"Swords01": "Swords01.jpg",
-	"Swords02": "Swords02.jpg",
-	"Swords03": "Swords03.jpg",
-	"Swords04": "Swords04.jpg",
-	"Swords05": "Swords05.jpg",
-	"Swords06": "Swords06.jpg",
-	"Swords07": "Swords07.jpg",
-	"Swords08": "Swords08.jpg",
-	"Swords09": "Swords09.jpg",
-	"Swords10": "Swords10.jpg",
-	"Swords11": "Swords11.jpg",
-	"Swords12": "Swords12.jpg",
-	"Swords13": "Swords13.jpg",
-	"Swords14": "Swords14.jpg",
-	"Wands01":  "Wands01.jpg",
-	"Wands02":  "Wands02.jpg",
-	"Wands03":  "Wands03.jpg",
-	"Wands04":  "Wands04.jpg",
-	"Wands05":  "Wands05.jpg",
-	"Wands06":  "Wands06.jpg",
-	"Wands07":  "Wands07.jpg",
-	"Wands08":  "Wands08.jpg",
-	"Wands09":  "Tarot_Nine_of_Wands.jpg",
-	"Wands10":  "Wands10.jpg",
-	"Wands11":  "Wands11.jpg",
-	"Wands12":  "Wands12.jpg",
-	"Wands13":  "Wands13.jpg",
-	"Wands14":  "Wands14.jpg",
 }

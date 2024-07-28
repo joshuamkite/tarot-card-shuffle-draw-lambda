@@ -42,6 +42,17 @@ curl -i -X POST https://${API_ID}.execute-api.eu-west-2.amazonaws.com/Prod/draw 
 
 # Test GET /license
 curl -i -X GET https://${API_ID}.execute-api.eu-west-2.amazonaws.com/Prod/license
+
+
+
+
+curl -X POST https://t7lfpot8l9.execute-api.eu-west-2.amazonaws.com/draw -H "Content-Type: application/json" -d '{
+  "deckSize": "Full Deck",
+  "deckReverse": "Upright and reversed",
+  "numCards": 8
+}'
+
+
 ```
 
 ## Check API Gateway

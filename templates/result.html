@@ -1,34 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Drawn Cards</title>
-    <style>
-        body {
-            font-family: sans-serif;
-        }
-
-        .reversed {
-            transform: rotate(180deg);
-        }
-    </style>
+    <meta charset="UTF-8">
+    <title>Tarot Draw Result</title>
 </head>
 
 <body>
-    <h1>Your Drawn Cards</h1>
-    <ul>
+    <h1>Tarot Draw Result</h1>
+    <div>
         {{ range $index, $card := .drawnCards }}
-        <li>{{ add $index 1 }}:
-            <img src="{{ $card.Image }}" alt="{{ $card.NameSuit }}" style="height:300px;"
-                class="{{ if $card.Reversed }}reversed{{ end }}">
-            {{ $card.Number }} {{ $card.NameSuit }} {{ $card.Reversed }}
-        </li>
+        <div>
+            <img src="{{ $card.Image }}" alt="{{ $card.NameSuit }}">
+            <p>{{ $card.Number }} {{ $card.NameSuit }} {{ $card.Reversed }}</p>
+        </div>
         {{ end }}
-    </ul>
-    {{ if .message }}
+    </div>
     <p>{{ .message }}</p>
-    {{ end }}
-    <a href="/">Draw Again</a>
 </body>
 
 </html>

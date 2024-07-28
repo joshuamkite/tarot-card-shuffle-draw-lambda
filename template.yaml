@@ -18,168 +18,46 @@ Resources:
       MemorySize: 128
       Policies:
         - AWSLambdaBasicExecutionRole
-        - AWSLambdaRole
       Events:
         RootGet:
-          Type: Api
+          Type: HttpApi
           Properties:
-            RestApiId: !Ref ApiGateway
             Path: /
             Method: GET
+            ApiId: !Ref TarotApi
         DrawPost:
-          Type: Api
+          Type: HttpApi
           Properties:
-            RestApiId: !Ref ApiGateway
             Path: /draw
             Method: POST
-        DrawOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGateway
-            Path: /draw
-            Method: OPTIONS
+            ApiId: !Ref TarotApi
         LicenseGet:
-          Type: Api
+          Type: HttpApi
           Properties:
-            RestApiId: !Ref ApiGateway
             Path: /license
             Method: GET
+            ApiId: !Ref TarotApi
 
-  TarotDrawFunctionResourcePolicy:
-    Type: AWS::Lambda::Permission
+  TarotApi:
+    Type: AWS::Serverless::HttpApi
     Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt TarotDrawFunction.Arn
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*/*"
-
-  ApiGateway:
-    Type: AWS::Serverless::Api
-    Properties:
-      StageName: Prod
-      Cors:
+      CorsConfiguration:
+        AllowOrigins: "'*'"
+        AllowHeaders: "'Content-Type'"
         AllowMethods: "'GET,POST,OPTIONS'"
-        AllowHeaders: "'content-type,authorization'"
-        AllowOrigin: "'*'"
-      DefinitionBody:
-        swagger: "2.0"
-        info:
-          title:
-            Ref: AWS::StackName
-        paths:
-          /:
-            get:
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      type: string
-              x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TarotDrawFunction.Arn}/invocations
-                passthroughBehavior: "when_no_match"
-                httpMethod: POST
-                type: aws_proxy
-            options:
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      type: string
-                    Access-Control-Allow-Methods:
-                      type: string
-                    Access-Control-Allow-Headers:
-                      type: string
-              x-amazon-apigateway-integration:
-                type: mock
-                requestTemplates:
-                  application/json: '{"statusCode": 200}'
-                responses:
-                  default:
-                    statusCode: 200
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
-          /draw:
-            post:
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      type: string
-              x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TarotDrawFunction.Arn}/invocations
-                passthroughBehavior: "when_no_match"
-                httpMethod: POST
-                type: aws_proxy
-            options:
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      type: string
-                    Access-Control-Allow-Methods:
-                      type: string
-                    Access-Control-Allow-Headers:
-                      type: string
-              x-amazon-apigateway-integration:
-                type: mock
-                requestTemplates:
-                  application/json: '{"statusCode": 200}'
-                responses:
-                  default:
-                    statusCode: 200
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
-          /license:
-            get:
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      type: string
-              x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${TarotDrawFunction.Arn}/invocations
-                passthroughBehavior: "when_no_match"
-                httpMethod: GET
-                type: aws_proxy
-            options:
-              responses:
-                "200":
-                  description: "200 response"
-                  headers:
-                    Access-Control-Allow-Origin:
-                      type: string
-                    Access-Control-Allow-Methods:
-                      type: string
-                    Access-Control-Allow-Headers:
-                      type: string
-              x-amazon-apigateway-integration:
-                type: mock
-                requestTemplates:
-                  application/json: '{"statusCode": 200}'
-                responses:
-                  default:
-                    statusCode: 200
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization'"
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
+
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/api-gateway/${TarotApi}/logs"
+      RetentionInDays: 7
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
 
 Outputs:
   ApiUrl:
-    Description: "API Gateway endpoint URL for Prod stage"
-    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Description: "HTTP API endpoint URL for the Prod stage"
+    Value: !Sub "https://${TarotApi}.execute-api.${AWS::Region}.amazonaws.com/"
   TarotDrawFunctionArn:
     Description: "Tarot Draw Function ARN"
     Value: !GetAtt TarotDrawFunction.Arn
