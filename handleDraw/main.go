@@ -22,23 +22,25 @@ type tarotDeck struct {
 
 var drawGinLambda *ginadapter.GinLambda
 
+// Initializing the Gin router
 func init() {
 	log.Printf("Gin cold start for handleDraw")
 	r := gin.Default()
-	r.Static("/static", "./static")
-	r.LoadHTMLGlob("templates/*")
-	r.POST("/draw", handleDraw)
-	drawGinLambda = ginadapter.New(r)
+	r.Static("/static", "./static")   // Serving static files
+	r.LoadHTMLGlob("templates/*")     // Loading HTML templates
+	r.POST("/draw", handleDraw)       // Registering POST route for /draw
+	drawGinLambda = ginadapter.New(r) // Creating a new GinLambda instance
 }
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
-	lambda.Start(drawHandler)
+	gin.SetMode(gin.ReleaseMode) // Setting Gin to release mode
+	lambda.Start(drawHandler)    // Starting the Lambda function
 }
 
+// Proxying the request to Gin
 func drawHandler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Printf("Received request: %+v", req)
-	resp, err := drawGinLambda.Proxy(req)
+	resp, err := drawGinLambda.Proxy(req) // Handling the request with GinLambda
 	if err != nil {
 		log.Printf("Error processing request: %v", err)
 		return events.APIGatewayProxyResponse{
@@ -49,21 +51,42 @@ func drawHandler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	if resp.Headers == nil {
 		resp.Headers = map[string]string{}
 	}
-	resp.Headers["Content-Type"] = "text/html"
+	resp.Headers["Content-Type"] = "text/html" // Ensuring Content-Type is set to text/html
 	return resp, nil
 }
 
+// Handling the draw request
 func handleDraw(c *gin.Context) {
 	log.Printf("Processing draw request")
 	c.Header("Content-Type", "text/html")
+
+	// Extract and validate form parameters
 	deckSize := c.PostForm("deckSize")
 	deckReverse := c.PostForm("deckReverse")
-	numCards, err := strconv.Atoi(c.PostForm("numCards"))
+	numCardsStr := c.PostForm("numCards")
+
+	if deckSize == "" || deckReverse == "" || numCardsStr == "" {
+		// If any required parameter is missing, return a catch-all error message
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"message": "Sorry I could not find the options to draw your cards",
+		})
+		return
+	}
+
+	numCards, err := strconv.Atoi(numCardsStr)
 	if err != nil || numCards < 1 {
 		numCards = 8
 	}
 
 	decks := getDeck(deckSize, deckReverse)
+	if decks == nil {
+		// If the deck configuration is invalid, return a catch-all error message
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"message": "Sorry I could not find the options to draw your cards",
+		})
+		return
+	}
+
 	totalCards := len(decks)
 
 	message := ""
@@ -81,6 +104,8 @@ func handleDraw(c *gin.Context) {
 	})
 	log.Printf("Drawn cards: %+v", drawnCards)
 }
+
+// Functions for generating the deck, shuffling, etc. remain the same
 
 var majorCards = map[string]string{
 	"I": "The Magician", "II": "The Papess", "III": "The Empress", "IV": "The Emperor",
@@ -134,6 +159,7 @@ var minorImages = map[string]string{
 	"Wands13": "Wands13.jpg", "Wands14": "Wands14.jpg",
 }
 
+// getDeck function generates the deck based on input
 func getDeck(deckSize, deckReverse string) []tarotDeck {
 	var decks []tarotDeck
 	switch deckSize {
@@ -143,6 +169,9 @@ func getDeck(deckSize, deckReverse string) []tarotDeck {
 		decks = minorArcana()
 	case "Full Deck":
 		decks = append(majorArcana(), minorArcana()...)
+	default:
+		// If deckSize is invalid, return nil
+		return nil
 	}
 
 	if deckReverse == "Upright and reversed" {
@@ -152,6 +181,7 @@ func getDeck(deckSize, deckReverse string) []tarotDeck {
 	return decks
 }
 
+// majorArcana generates the major arcana deck
 func majorArcana() []tarotDeck {
 	var majorArcana []tarotDeck
 	for key, value := range majorCards {
@@ -164,6 +194,7 @@ func majorArcana() []tarotDeck {
 	return majorArcana
 }
 
+// minorArcana generates the minor arcana deck
 func minorArcana() []tarotDeck {
 	var minorArcana []tarotDeck
 	for suit, fullSuitName := range minorSuits {
@@ -179,6 +210,7 @@ func minorArcana() []tarotDeck {
 	return minorArcana
 }
 
+// includeReversed includes reversed cards in the deck
 func includeReversed(decks []tarotDeck) []tarotDeck {
 	var newDecks []tarotDeck
 	for i := range decks {
@@ -202,6 +234,7 @@ func includeReversed(decks []tarotDeck) []tarotDeck {
 	return newDecks
 }
 
+// shuffle shuffles the deck
 func shuffle(decks []tarotDeck) []tarotDeck {
 	for i := range decks {
 		b := make([]byte, 1)

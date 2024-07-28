@@ -1,0 +1,10 @@
+{
+  "body": "ZGVja1NpemU9RnVsbCtEZWNrJmRlY2tSZXZlcnNlPVVwcmlnaHQrYW5kK3JldmVyc2VkJm51bUNhcmRzPTg=",
+  "isBase64Encoded": true,
+  "resource": "/draw",
+  "path": "/draw",
+  "httpMethod": "POST",
+  "headers": {
+    "Content-Type": "application/x-www-form-urlencoded"
+  }
+}

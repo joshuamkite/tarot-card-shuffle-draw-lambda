@@ -67,6 +67,7 @@ Resources:
         AllowOrigins: "'*'"
         AllowHeaders: "'Content-Type'"
         AllowMethods: "'GET,POST,OPTIONS'"
+      StageName: $default # Ensure we are using the $default stage
       AccessLogSettings:
         DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
         Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
@@ -82,4 +83,4 @@ Resources:
 Outputs:
   ApiUrl:
     Description: "HTTP API endpoint URL for the Prod stage"
-    Value: !Sub "https://${TarotApi}.execute-api.${AWS::Region}.amazonaws.com/"
+    Value: !Sub "https://${TarotApi}.execute-api.${AWS::Region}.amazonaws.com/$default/"
