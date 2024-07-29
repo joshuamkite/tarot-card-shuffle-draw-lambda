@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"embed"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 	"strconv"
@@ -15,8 +16,7 @@ import (
 
 // Embed the static files and templates
 //
-//go:embed static/images/*
-//go:embed templates/*
+//go:embed static
 var content embed.FS
 
 type tarotDeck struct {
@@ -34,15 +34,27 @@ var (
 func init() {
 	log.Printf("Cold start for handleDraw")
 
-	mux := http.NewServeMux()
-	// Set the correct Content-Type for images
-	mux.Handle("/static/images/", http.StripPrefix("/static/images/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// Create a sub-filesystem for the static directory
+	staticFS, err := fs.Sub(content, "static")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Parse templates from the embedded filesystem
+	tmpl = template.Must(template.ParseFS(content, "static/templates/*"))
+
+	// Create a file server to serve static files from the embedded static directory
+	staticFileServer := http.FileServer(http.FS(staticFS))
+
+	// Wrap the file server with a handler to set headers
+	http.Handle("/static/", http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/jpeg")
-		http.FileServer(http.FS(content)).ServeHTTP(w, r)
+		w.Header().Set("Cache-Control", "public, max-age=31536000")
+		staticFileServer.ServeHTTP(w, r)
 	})))
-	mux.HandleFunc("/draw", handleDraw)
-	drawLambda = httpadapter.NewV2(mux)
-	tmpl = template.Must(template.ParseFS(content, "templates/*"))
+
+	// Add a handler for the draw path
+	http.HandleFunc("/draw", handleDraw)
 
 	// Check if files are embedded correctly
 	files, err := content.ReadDir("static/images")
@@ -50,8 +62,13 @@ func init() {
 		log.Printf("Error reading embedded files: %v", err)
 	} else {
 		log.Printf("Number of embedded image files: %d", len(files))
+		for _, file := range files {
+			log.Printf("Embedded image file: %s", file.Name())
+		}
 	}
 
+	// Initialize the Lambda handler with the default HTTP mux
+	drawLambda = httpadapter.NewV2(http.DefaultServeMux)
 }
 
 func main() {
@@ -119,6 +136,11 @@ func handleDraw(w http.ResponseWriter, r *http.Request) {
 
 	shuffledDeck := shuffle(decks)
 	drawnCards := shuffledDeck[:numCards]
+
+	// Log the URLs of the images
+	for _, card := range drawnCards {
+		log.Printf("Image URL: /static/images/%s", card.Image)
+	}
 
 	tmpl.ExecuteTemplate(w, "result.html", map[string]interface{}{
 		"drawnCards": drawnCards,
