@@ -2,16 +2,22 @@ package main
 
 import (
 	"crypto/rand"
+	"embed"
 	"html/template"
 	"log"
 	"net/http"
-	"path/filepath"
 	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 )
+
+// Embed the static files and templates
+//
+//go:embed static/images/*
+//go:embed templates/*
+var content embed.FS
 
 type tarotDeck struct {
 	Number   string `json:"number"`
@@ -27,11 +33,25 @@ var (
 
 func init() {
 	log.Printf("Cold start for handleDraw")
+
 	mux := http.NewServeMux()
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	// Set the correct Content-Type for images
+	mux.Handle("/static/images/", http.StripPrefix("/static/images/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/jpeg")
+		http.FileServer(http.FS(content)).ServeHTTP(w, r)
+	})))
 	mux.HandleFunc("/draw", handleDraw)
 	drawLambda = httpadapter.NewV2(mux)
-	tmpl = template.Must(template.ParseGlob("templates/*"))
+	tmpl = template.Must(template.ParseFS(content, "templates/*"))
+
+	// Check if files are embedded correctly
+	files, err := content.ReadDir("static/images")
+	if err != nil {
+		log.Printf("Error reading embedded files: %v", err)
+	} else {
+		log.Printf("Number of embedded image files: %d", len(files))
+	}
+
 }
 
 func main() {
@@ -65,13 +85,11 @@ func handleDraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Extract and validate form parameters
 	deckSize := r.FormValue("deckSize")
 	deckReverse := r.FormValue("deckReverse")
 	numCardsStr := r.FormValue("numCards")
 
 	if deckSize == "" || deckReverse == "" || numCardsStr == "" {
-		// If any required parameter is missing, return a catch-all error message
 		tmpl.ExecuteTemplate(w, "error.html", map[string]interface{}{
 			"message": "Sorry I could not find the options to draw your cards",
 		})
@@ -85,7 +103,6 @@ func handleDraw(w http.ResponseWriter, r *http.Request) {
 
 	decks := getDeck(deckSize, deckReverse)
 	if decks == nil {
-		// If the deck configuration is invalid, return a catch-all error message
 		tmpl.ExecuteTemplate(w, "error.html", map[string]interface{}{
 			"message": "Sorry I could not find the options to draw your cards",
 		})
@@ -193,8 +210,7 @@ func majorArcana() []tarotDeck {
 		majorArcana = append(majorArcana, tarotDeck{
 			Number:   key,
 			NameSuit: value,
-			Image:    filepath.Join("/static/images", majorImages[key]),
-		})
+			Image:    majorImages[key]})
 	}
 	return majorArcana
 }
@@ -208,8 +224,7 @@ func minorArcana() []tarotDeck {
 			minorArcana = append(minorArcana, tarotDeck{
 				Number:   fullNumberName,
 				NameSuit: "of " + fullSuitName,
-				Image:    filepath.Join("/static/images", minorImages[key]),
-			})
+				Image:    minorImages[key]})
 		}
 	}
 	return minorArcana

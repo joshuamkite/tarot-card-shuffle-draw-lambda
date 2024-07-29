@@ -16,7 +16,7 @@
     <div>
         {{ range $index, $card := .drawnCards }}
         <div>
-            <img src="{{ $card.Image }}" alt="{{ $card.NameSuit }}">
+            <img src="/static/images/{{ $card.Image }}" alt="{{ $card.NameSuit }}">
             <p>{{ $card.Number }} {{ $card.NameSuit }} {{ $card.Reversed }}</p>
         </div>
         {{ end }}
