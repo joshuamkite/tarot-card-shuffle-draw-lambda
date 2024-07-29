@@ -63,10 +63,10 @@ Resources:
   TarotApi:
     Type: AWS::Serverless::HttpApi
     Properties:
-      CorsConfiguration:
-        AllowOrigins: "'*'"
-        AllowHeaders: "'Content-Type'"
-        AllowMethods: "'GET,POST,OPTIONS'"
+      # CorsConfiguration:
+      #   AllowOrigins: "'*'"
+      #   AllowHeaders: "'Content-Type'"
+      #   AllowMethods: "'GET,POST,OPTIONS'"
       StageName: $default # Ensure we are using the $default stage
       AccessLogSettings:
         DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
@@ -83,4 +83,4 @@ Resources:
 Outputs:
   ApiUrl:
     Description: "HTTP API endpoint URL for the Prod stage"
-    Value: !Sub "https://${TarotApi}.execute-api.${AWS::Region}.amazonaws.com/$default/"
+    Value: !Sub "https://${TarotApi}.execute-api.${AWS::Region}.amazonaws.com/"

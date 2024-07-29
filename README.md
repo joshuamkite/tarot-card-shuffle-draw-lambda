@@ -52,6 +52,9 @@ curl -X POST https://t7lfpot8l9.execute-api.eu-west-2.amazonaws.com/draw -H "Con
 }'
 
 
+aws lambda invoke --function-name DrawFunction --payload file://payload.json response.json
+
+
 ```
 
 ## Check API Gateway

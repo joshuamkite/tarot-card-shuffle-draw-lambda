@@ -1,0 +1,48 @@
+{
+    "resource": "/draw",
+    "path": "/draw",
+    "httpMethod": "POST",
+    "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "multiValueHeaders": {
+        "Content-Type": [
+            "application/x-www-form-urlencoded"
+        ]
+    },
+    "queryStringParameters": null,
+    "multiValueQueryStringParameters": null,
+    "pathParameters": null,
+    "stageVariables": null,
+    "requestContext": {
+        "resourceId": "123456",
+        "resourcePath": "/draw",
+        "httpMethod": "POST",
+        "extendedRequestId": "request-id",
+        "requestTime": "04/Feb/2021:19:15:17 +0000",
+        "path": "/Prod/draw",
+        "accountId": "123456789012",
+        "protocol": "HTTP/1.1",
+        "stage": "Prod",
+        "domainPrefix": "testPrefix",
+        "requestTimeEpoch": 1518121492527,
+        "requestId": "c8d9f1f6-14f2-11e8-9e9e-ef356f79f99d",
+        "identity": {
+            "cognitoIdentityPoolId": null,
+            "accountId": null,
+            "cognitoIdentityId": null,
+            "caller": null,
+            "sourceIp": "192.168.0.1",
+            "accessKey": null,
+            "cognitoAuthenticationType": null,
+            "cognitoAuthenticationProvider": null,
+            "userArn": null,
+            "userAgent": "Custom User Agent String",
+            "user": null
+        },
+        "domainName": "testPrefix.testDomainName",
+        "apiId": "1234567890"
+    },
+    "body": "deckSize=Full+Deck&deckReverse=Upright+and+reversed&numCards=8",
+    "isBase64Encoded": false
+}

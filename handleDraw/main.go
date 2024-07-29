@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -9,8 +10,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
-	"github.com/gin-gonic/gin"
+	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 )
 
 type tarotDeck struct {
@@ -20,54 +20,59 @@ type tarotDeck struct {
 	Image    string `json:"image"`
 }
 
-var drawGinLambda *ginadapter.GinLambda
+var (
+	drawLambda *httpadapter.HandlerAdapterV2
+	tmpl       *template.Template
+)
 
-// Initializing the Gin router
 func init() {
-	log.Printf("Gin cold start for handleDraw")
-	r := gin.Default()
-	r.Static("/static", "./static")   // Serving static files
-	r.LoadHTMLGlob("templates/*")     // Loading HTML templates
-	r.POST("/draw", handleDraw)       // Registering POST route for /draw
-	drawGinLambda = ginadapter.New(r) // Creating a new GinLambda instance
+	log.Printf("Cold start for handleDraw")
+	mux := http.NewServeMux()
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	mux.HandleFunc("/draw", handleDraw)
+	drawLambda = httpadapter.NewV2(mux)
+	tmpl = template.Must(template.ParseGlob("templates/*"))
 }
 
 func main() {
-	gin.SetMode(gin.ReleaseMode) // Setting Gin to release mode
-	lambda.Start(drawHandler)    // Starting the Lambda function
+	lambda.Start(drawHandler)
 }
 
-// Proxying the request to Gin
-func drawHandler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	log.Printf("Received request: %+v", req)
-	resp, err := drawGinLambda.Proxy(req) // Handling the request with GinLambda
+func drawHandler(req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
+	resp, err := drawLambda.Proxy(req)
 	if err != nil {
 		log.Printf("Error processing request: %v", err)
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       err.Error(),
 		}, nil
 	}
+
 	if resp.Headers == nil {
 		resp.Headers = map[string]string{}
 	}
-	resp.Headers["Content-Type"] = "text/html" // Ensuring Content-Type is set to text/html
-	return resp, nil
+	resp.Headers["Content-Type"] = "text/html"
+	return events.APIGatewayV2HTTPResponse{
+		StatusCode: resp.StatusCode,
+		Headers:    resp.Headers,
+		Body:       resp.Body,
+	}, nil
 }
 
-// Handling the draw request
-func handleDraw(c *gin.Context) {
-	log.Printf("Processing draw request")
-	c.Header("Content-Type", "text/html")
+func handleDraw(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
 
 	// Extract and validate form parameters
-	deckSize := c.PostForm("deckSize")
-	deckReverse := c.PostForm("deckReverse")
-	numCardsStr := c.PostForm("numCards")
+	deckSize := r.FormValue("deckSize")
+	deckReverse := r.FormValue("deckReverse")
+	numCardsStr := r.FormValue("numCards")
 
 	if deckSize == "" || deckReverse == "" || numCardsStr == "" {
 		// If any required parameter is missing, return a catch-all error message
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+		tmpl.ExecuteTemplate(w, "error.html", map[string]interface{}{
 			"message": "Sorry I could not find the options to draw your cards",
 		})
 		return
@@ -81,7 +86,7 @@ func handleDraw(c *gin.Context) {
 	decks := getDeck(deckSize, deckReverse)
 	if decks == nil {
 		// If the deck configuration is invalid, return a catch-all error message
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+		tmpl.ExecuteTemplate(w, "error.html", map[string]interface{}{
 			"message": "Sorry I could not find the options to draw your cards",
 		})
 		return
@@ -98,7 +103,7 @@ func handleDraw(c *gin.Context) {
 	shuffledDeck := shuffle(decks)
 	drawnCards := shuffledDeck[:numCards]
 
-	c.HTML(http.StatusOK, "result.html", gin.H{
+	tmpl.ExecuteTemplate(w, "result.html", map[string]interface{}{
 		"drawnCards": drawnCards,
 		"message":    message,
 	})
