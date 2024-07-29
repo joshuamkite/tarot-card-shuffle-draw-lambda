@@ -1,12 +1,15 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  AWS SAM template to deploy GoLang Lambda functions using Gin framework.
+  AWS SAM template to deploy GoLang Lambda functions.
 
 Globals:
   Function:
     Runtime: provided.al2023
     Timeout: 10
+    Environment:
+      Variables:
+        CLOUDFRONT_URL: !Sub "https://${TarotCloudFrontDistribution.DomainName}"
 
 Resources:
   OptionsPageFunction:
@@ -63,10 +66,6 @@ Resources:
   TarotApi:
     Type: AWS::Serverless::HttpApi
     Properties:
-      # CorsConfiguration:
-      #   AllowOrigins: "'*'"
-      #   AllowHeaders: "'Content-Type'"
-      #   AllowMethods: "'GET,POST,OPTIONS'"
       StageName: $default # Ensure we are using the $default stage
       AccessLogSettings:
         DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
@@ -80,7 +79,76 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
 
+  TarotImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "tarot-images-bucket-${AWS::AccountId}-${AWS::Region}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+            AllowedOrigins:
+              - "*"
+            MaxAge: 3000
+
+  TarotImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TarotImagesBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt TarotCloudFrontOriginAccessIdentity.S3CanonicalUserId
+            Action: "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${TarotImagesBucket}/*"
+
+  TarotCloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Access to S3 bucket for Tarot Images
+
+  TarotCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt TarotImagesBucket.DomainName
+            Id: TarotImagesBucketOrigin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${TarotCloudFrontOriginAccessIdentity}"
+        Enabled: true
+        DefaultCacheBehavior:
+          TargetOriginId: TarotImagesBucketOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+        PriceClass: PriceClass_100
+        DefaultRootObject: index.html
+
 Outputs:
   ApiUrl:
     Description: "HTTP API endpoint URL for the Prod stage"
     Value: !Sub "https://${TarotApi}.execute-api.${AWS::Region}.amazonaws.com/"
+
+  ImagesBucketName:
+    Description: "S3 Bucket for Tarot Images"
+    Value: !Ref TarotImagesBucket
+
+  CloudFrontDistribution:
+    Description: "CloudFront distribution URL"
+    Value: !Sub "https://${TarotCloudFrontDistribution.DomainName}/"

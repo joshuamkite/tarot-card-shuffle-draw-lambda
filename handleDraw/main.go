@@ -4,9 +4,9 @@ import (
 	"crypto/rand"
 	"embed"
 	"html/template"
-	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -14,9 +14,9 @@ import (
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 )
 
-// Embed the static files and templates
+// Embed the templates only
 //
-//go:embed static
+//go:embed static/templates/*
 var content embed.FS
 
 type tarotDeck struct {
@@ -27,45 +27,19 @@ type tarotDeck struct {
 }
 
 var (
-	drawLambda *httpadapter.HandlerAdapterV2
-	tmpl       *template.Template
+	drawLambda    *httpadapter.HandlerAdapterV2
+	tmpl          *template.Template
+	cloudFrontURL = os.Getenv("CLOUDFRONT_URL")
 )
 
 func init() {
 	log.Printf("Cold start for handleDraw")
 
-	// Create a sub-filesystem for the static directory
-	staticFS, err := fs.Sub(content, "static")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// Parse templates from the embedded filesystem
 	tmpl = template.Must(template.ParseFS(content, "static/templates/*"))
 
-	// Create a file server to serve static files from the embedded static directory
-	staticFileServer := http.FileServer(http.FS(staticFS))
-
-	// Wrap the file server with a handler to set headers
-	http.Handle("/static/", http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "image/jpeg")
-		w.Header().Set("Cache-Control", "public, max-age=31536000")
-		staticFileServer.ServeHTTP(w, r)
-	})))
-
 	// Add a handler for the draw path
 	http.HandleFunc("/draw", handleDraw)
-
-	// Check if files are embedded correctly
-	files, err := content.ReadDir("static/images")
-	if err != nil {
-		log.Printf("Error reading embedded files: %v", err)
-	} else {
-		log.Printf("Number of embedded image files: %d", len(files))
-		for _, file := range files {
-			log.Printf("Embedded image file: %s", file.Name())
-		}
-	}
 
 	// Initialize the Lambda handler with the default HTTP mux
 	drawLambda = httpadapter.NewV2(http.DefaultServeMux)
@@ -137,15 +111,22 @@ func handleDraw(w http.ResponseWriter, r *http.Request) {
 	shuffledDeck := shuffle(decks)
 	drawnCards := shuffledDeck[:numCards]
 
-	// Log the URLs of the images
-	for _, card := range drawnCards {
-		log.Printf("Image URL: /static/images/%s", card.Image)
+	// Add logging for debugging
+	log.Printf("CloudFront URL: %s", cloudFrontURL)
+
+	// Update image URLs to use CloudFront
+	for i := range drawnCards {
+		drawnCards[i].Image = cloudFrontURL + "/images/" + drawnCards[i].Image
+		log.Printf("Image URL: %s", drawnCards[i].Image) // Log each image URL
 	}
 
-	tmpl.ExecuteTemplate(w, "result.html", map[string]interface{}{
-		"drawnCards": drawnCards,
-		"message":    message,
-	})
+	data := map[string]interface{}{
+		"drawnCards":    drawnCards,
+		"message":       message,
+		"CloudFrontURL": cloudFrontURL,
+	}
+
+	tmpl.ExecuteTemplate(w, "result.html", data)
 	log.Printf("Drawn cards: %+v", drawnCards)
 }
 
