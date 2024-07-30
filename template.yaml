@@ -100,17 +100,25 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Sid: "AllowCloudFrontServicePrincipal"
+            Effect: "Allow"
             Principal:
-              CanonicalUser: !GetAtt TarotCloudFrontOriginAccessIdentity.S3CanonicalUserId
+              Service: "cloudfront.amazonaws.com"
             Action: "s3:GetObject"
             Resource: !Sub "arn:aws:s3:::${TarotImagesBucket}/*"
+            Condition:
+              StringEquals:
+                "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${TarotCloudFrontDistribution}"
 
-  TarotCloudFrontOriginAccessIdentity:
-    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+  TarotCloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
     Properties:
-      CloudFrontOriginAccessIdentityConfig:
-        Comment: Access to S3 bucket for Tarot Images
+      OriginAccessControlConfig:
+        Name: TarotImagesOAC
+        Description: OAC for Tarot Images
+        SigningProtocol: sigv4
+        SigningBehavior: always
+        OriginAccessControlOriginType: s3
 
   TarotCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -119,8 +127,8 @@ Resources:
         Origins:
           - DomainName: !GetAtt TarotImagesBucket.DomainName
             Id: TarotImagesBucketOrigin
-            S3OriginConfig:
-              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${TarotCloudFrontOriginAccessIdentity}"
+            S3OriginConfig: {}
+            OriginAccessControlId: !Ref TarotCloudFrontOriginAccessControl
         Enabled: true
         DefaultCacheBehavior:
           TargetOriginId: TarotImagesBucketOrigin
