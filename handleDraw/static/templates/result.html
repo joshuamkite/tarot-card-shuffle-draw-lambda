@@ -9,9 +9,17 @@
             font-family: sans-serif;
         }
 
-        img {
+        .card {
+            margin-bottom: 20px;
+        }
+
+        .card img {
             width: 300px;
             height: auto;
+        }
+
+        .card .reversed {
+            transform: rotate(180deg);
         }
     </style>
 </head>
@@ -20,9 +28,9 @@
     <h1>Tarot Draw Result</h1>
     <div>
         {{ range $index, $card := .drawnCards }}
-        <div>
-            <img src="{{ $card.Image }}" alt="{{ $card.NameSuit }}">
+        <div class="card">
             <p>{{ $card.Number }} {{ $card.NameSuit }} {{ $card.Reversed }}</p>
+            <img src="{{ $card.Image }}" alt="{{ $card.NameSuit }}" class="{{ if $card.Reversed }}reversed{{ end }}">
         </div>
         {{ end }}
     </div>
