@@ -31,22 +31,23 @@ Tarot Card Shuffle Draw is a web application that simulates a tarot card reading
 1. **Build and Deploy the SAM Application:**
 
     ```sh
-    sam build && \
-    sam deploy \
-        --stack-name TarotCardDrawApp \
-        --capabilities CAPABILITY_IAM \
-        --region eu-west-2 \
-        --resolve-s3
+sam build && sam deploy \
+    --stack-name TarotCardDrawApp \
+    --capabilities CAPABILITY_IAM \
+    --region eu-west-2 \
+    --resolve-s3 \
+    --parameter-overrides ParameterKey=DomainName,ParameterValue=$DOMAINNAME \
+                         ParameterKey=HostedZoneId,ParameterValue=$HOSTEDZONEID
     ```
 
-2. **Upload Images to S3:**
+1. **Upload Images to S3:**
    - Use the provided script to upload images.
    
    ```sh
    sh dev_tooling/images_to_s3.sh
    ```
 
-3. **Invalidate CloudFront Cache:**
+2. **Invalidate CloudFront Cache:**
    - Invalidate the CloudFront cache to ensure updated content is served.
    
    ```sh

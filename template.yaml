@@ -8,6 +8,15 @@ Parameters:
     Default: TarotImages
     Type: String
 
+  DomainName:
+    Type: String
+    Description: "The custom domain name for the API"
+    Default: "api.example.com"
+
+  HostedZoneId:
+    Type: String
+    Description: "The ID of the Route 53 hosted zone for the domain"
+
 Globals:
   Function:
     Runtime: provided.al2023
@@ -71,10 +80,15 @@ Resources:
   TarotApi:
     Type: AWS::Serverless::HttpApi
     Properties:
-      StageName: $default # Ensure we are using the $default stage
+      StageName: $default
       AccessLogSettings:
         DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
         Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
+      Domain:
+        DomainName: !Ref DomainName
+        CertificateArn: !Ref ApiCertificate
+        Route53:
+          HostedZoneId: !Ref HostedZoneId
 
   ApiGatewayLogGroup:
     Type: AWS::Logs::LogGroup
@@ -152,6 +166,12 @@ Resources:
           CloudFrontDefaultCertificate: true
         PriceClass: PriceClass_100
         DefaultRootObject: index.html
+
+  ApiCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
 
 Outputs:
   ApiUrl:
