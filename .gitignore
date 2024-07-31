@@ -1,1 +1,2 @@
 *.zip
+.aws-sam/

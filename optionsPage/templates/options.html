@@ -8,11 +8,20 @@
             font-family: sans-serif;
         }
     </style>
+    <script>
+        function checkFormMethod(event) {
+            const form = document.getElementById('tarotForm');
+            if (form.method.toLowerCase() !== 'post') {
+                event.preventDefault();
+                alert('Form method is not POST');
+            }
+        }
+    </script>
 </head>
 
 <body>
     <h1>Tarot Card Shuffle Draw</h1>
-    <form action="/draw" method="post">
+    <form id="tarotForm" action="/draw" method="post" onsubmit="checkFormMethod(event)">
         <label for="deckSize">Which cards would you like to use?</label><br>
         <select name="deckSize" id="deckSize">
             <option value="Full Deck">Full Deck</option>

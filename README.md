@@ -1,19 +1,16 @@
-# Tarot Card Shuffle Draw
+# Tarot Card Shuffle Lambda
 
 Tarot Card Shuffle Draw is a web application that simulates a tarot card reading. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. 
 
-- [Tarot Card Shuffle Draw](#tarot-card-shuffle-draw)
+- [Tarot Card Shuffle Lambda](#tarot-card-shuffle-lambda)
   - [Features](#features)
-  - [Getting Started](#getting-started)
-    - [Running the Application Locally](#running-the-application-locally)
-    - [Running the Application with Docker](#running-the-application-with-docker)
-    - [Running the Application with Helm](#running-the-application-with-helm)
-    - [Running the Application with ArgoCD](#running-the-application-with-argocd)
+  - [Deployment](#deployment)
+  - [API test with CURL](#api-test-with-curl)
+  - [Check API Gateway](#check-api-gateway)
   - [Usage](#usage)
     - [Web Interface](#web-interface)
     - [API Endpoints](#api-endpoints)
-  - [Development and Testing](#development-and-testing)
-    - [Running Tests](#running-tests)
+  - [Cleanup](#cleanup)
 
 ## Features
 
@@ -21,119 +18,48 @@ Tarot Card Shuffle Draw is a web application that simulates a tarot card reading
 - **Reversed Cards**: Option to include reversed cards
 - **Random Draw**: Secure randomness using `crypto/rand`
 - **Web Interface**: User-friendly web interface built with Gin
-- **Dockerized**: Easy deployment with Docker
-- **Continuous Integration**: Automated testing and deployment with GitHub Actions
 
-## Getting Started
+## Deployment
 
-The included GitHub actions workflow covers test, build, package, publish.
+sam build && \
+sam deploy \
+    --stack-name TarotCardDrawApp \
+    --capabilities CAPABILITY_IAM \
+    --region eu-west-2 \
+    --resolve-s3
 
-### Running the Application Locally
+## API test with CURL
 
-**Prerequisites**
+```bash
 
-- Go 1.22 or later
-- Docker (for containerized deployment)
 
-There is a helper script for downloading the (included) images from Wikipedia/Wikimedia commons in `image_downloader`
+# Test GET /
+curl -i -X GET https://ypo33qaaf5.execute-api.eu-west-2.amazonaws.com/
 
-1. **Clone the repository**:
+# Test POST /draw
+curl -i -X POST https://ypo33qaaf5.execute-api.eu-west-2.amazonaws.com/draw -H "Content-Type: application/json" -d '{}'
 
-    ```sh
-    git clone https://github.com/joshuamkite/tarot-card-shuffle-draw-web.git
-    cd tarot-card-shuffle-draw-web
-    ```
+# Test GET /license
+curl -i -X GET https://ypo33qaaf5.execute-api.eu-west-2.amazonaws.com/license
 
-2. **Install dependencies and run the application**:
 
-    ```sh
-    go mod tidy
-    go run main.go
-    ```
 
-3. **Open your browser** and navigate to `http://localhost:80`.
 
-### Running the Application with Docker
+curl -X POST https://t7lfpot8l9.execute-api.eu-west-2.amazonaws.com/draw -H "Content-Type: application/json" -d '{
+  "deckSize": "Full Deck",
+  "deckReverse": "Upright and reversed",
+  "numCards": 8
+}'
 
-1. **Build the Docker image**:
 
-    ```sh
-    docker build -t tarot_shuffle_draw .
-    ```
+aws lambda invoke --function-name DrawFunction --payload file://payload.json response.json
 
-2. **Run the Docker container**:
 
-    ```sh
-    docker run -p 80:80 tarot_shuffle_draw
-    ```
+```
 
-3. **Open your browser** and navigate to `http://localhost`.
+## Check API Gateway
 
-### Running the Application with Helm
-
-**Prerequisites**
-
-- Kubernetes cluster
-- Helm installed
-
-1. **Add the Helm Repository**:
-
-    ```sh
-    helm repo add tarot-card-shuffle-draw-web https://github.com/joshuamkite/tarot-card-shuffle-draw-web
-    ```
-
-2. **Update the Helm Repository**:
-
-    ```sh
-    helm repo update
-    ```
-
-3. **Install the Helm Chart**:
-
-    ```sh
-    helm install tarot-shuffle-draw tarot-card-shuffle-draw-web/helm/tarot-shuffle-draw
-    ```
-
-4. **Access the Application**:
-
-    ```sh
-    kubectl get svc --namespace default
-    ```
-
-    Look for the `tarot-shuffle-draw` service and note the `NodePort`. Access the application at `http://<node-ip>:<node-port>`.
-
-### Running the Application with ArgoCD
-
-**Prerequisites**
-
-- Kubernetes cluster
-- ArgoCD installed
-
-1. **Add the Application to ArgoCD**:
-
-    Create a new application in ArgoCD pointing to this repository.
-
-    ```sh
-    argocd app create tarot-shuffle-draw \
-      --repo https://github.com/joshuamkite/tarot-card-shuffle-draw-web.git \
-      --path helm/tarot-shuffle-draw \
-      --dest-server https://kubernetes.default.svc \
-      --dest-namespace default
-    ```
-
-2. **Sync the Application**:
-
-    ```sh
-    argocd app sync tarot-shuffle-draw
-    ```
-
-3. **Access the Application**:
-
-    ```sh
-    kubectl get svc --namespace default
-    ```
-
-    Look for the `tarot-shuffle-draw` service and note the `NodePort`. Access the application at `http://<node-ip>:<node-port>`.
+check_api_gateway.sh
 
 ## Usage
 
@@ -150,11 +76,6 @@ There is a helper script for downloading the (included) images from Wikipedia/Wi
 - `POST /draw`: Handles drawing cards based on user input.
 - `GET /license`: Displays the license page.
 
-## Development and Testing
+## Cleanup
 
-### Running Tests
-
-Run the tests using the following command:
-
-```sh
-go test -v -cover ./...
+sam delete --stack-name TarotCardDrawApp --region eu-west-2

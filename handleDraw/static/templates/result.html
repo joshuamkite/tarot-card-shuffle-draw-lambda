@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tarot Draw Result</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        .card {
+            margin-bottom: 20px;
+        }
+
+        .card img {
+            width: 300px;
+            height: auto;
+        }
+
+        .card .reversed {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Tarot Draw Result</h1>
+    <div>
+        {{ range $index, $card := .drawnCards }}
+        <div class="card">
+            <p>{{ $card.Number }} {{ $card.NameSuit }} {{ $card.Reversed }}</p>
+            <img src="{{ $card.Image }}" alt="{{ $card.NameSuit }}" class="{{ if $card.Reversed }}reversed{{ end }}">
+        </div>
+        {{ end }}
+    </div>
+    <p>{{ .message }}</p>
+    <a href="/">Back to Home</a>
+</body>
+
+</html>
