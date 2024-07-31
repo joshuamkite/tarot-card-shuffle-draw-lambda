@@ -1,4 +1,3 @@
-
 # Tarot Card Shuffle Lambda
 
 Tarot Card Shuffle Draw is a web application that simulates a tarot card reading. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. 
