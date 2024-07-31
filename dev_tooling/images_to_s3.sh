@@ -7,7 +7,7 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 BUCKET_NAME="tarot-images-bucket-${ACCOUNT_ID}-${AWS_REGION}"
 
 # Directory containing the images
-IMAGE_DIR="handleDraw/static/images"
+IMAGE_DIR="../handleDraw/static/images"
 
 # Upload images to S3 bucket
 aws s3 sync $IMAGE_DIR s3://$BUCKET_NAME/images/ # --acl private
