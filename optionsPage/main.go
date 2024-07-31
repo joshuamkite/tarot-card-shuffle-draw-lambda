@@ -13,7 +13,7 @@ import (
 var optionsGinLambda *ginadapter.GinLambda
 
 func init() {
-	log.Printf("Gin cold start for showOptionsPage")
+	// log.Printf("Gin cold start for showOptionsPage")
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")
 	r.GET("/", showOptionsPage)
@@ -26,7 +26,7 @@ func main() {
 }
 
 func optionsHandler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	log.Printf("Received request: %+v", req)
+	// log.Printf("Received request: %+v", req)
 	resp, err := optionsGinLambda.Proxy(req)
 	if err != nil {
 		log.Printf("Error processing request: %v", err)

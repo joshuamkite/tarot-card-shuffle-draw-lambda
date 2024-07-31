@@ -33,7 +33,7 @@ var (
 )
 
 func init() {
-	log.Printf("Cold start for handleDraw")
+	// log.Printf("Cold start for handleDraw")
 
 	// Parse templates from the embedded filesystem
 	tmpl = template.Must(template.ParseFS(content, "static/templates/*"))
@@ -112,12 +112,12 @@ func handleDraw(w http.ResponseWriter, r *http.Request) {
 	drawnCards := shuffledDeck[:numCards]
 
 	// Add logging for debugging
-	log.Printf("CloudFront URL: %s", cloudFrontURL)
+	// log.Printf("CloudFront URL: %s", cloudFrontURL)
 
 	// Update image URLs to use CloudFront
 	for i := range drawnCards {
 		drawnCards[i].Image = cloudFrontURL + "/images/" + drawnCards[i].Image
-		log.Printf("Image URL: %s", drawnCards[i].Image) // Log each image URL
+		// log.Printf("Image URL: %s", drawnCards[i].Image) // Log each image URL
 	}
 
 	data := map[string]interface{}{
@@ -127,7 +127,7 @@ func handleDraw(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.ExecuteTemplate(w, "result.html", data)
-	log.Printf("Drawn cards: %+v", drawnCards)
+	// log.Printf("Drawn cards: %+v", drawnCards)
 }
 
 // Functions for generating the deck, shuffling, etc. remain the same
