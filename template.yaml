@@ -102,15 +102,6 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "tarot-images-bucket-${AWS::AccountId}-${AWS::Region}"
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders:
-              - "*"
-            AllowedMethods:
-              - GET
-            AllowedOrigins:
-              - "*"
-            MaxAge: 3000
 
   TarotImagesBucketPolicy:
     Type: AWS::S3::BucketPolicy
