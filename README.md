@@ -1,6 +1,6 @@
 # Tarot Card Shuffle Lambda
 
-Tarot Card Shuffle Draw is a web application that simulates a tarot card reading. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. 
+Tarot Card Shuffle Draw is a free and open-source project that shuffles and returns a selection of Tarot cards. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. 
 
 - [Tarot Card Shuffle Lambda](#tarot-card-shuffle-lambda)
   - [Features](#features)
@@ -11,6 +11,7 @@ Tarot Card Shuffle Draw is a web application that simulates a tarot card reading
     - [Web Interface](#web-interface)
     - [API Endpoints](#api-endpoints)
   - [Cleanup](#cleanup)
+  - [Alternative Deployment Versions](#alternative-deployment-versions)
 
 ## Features
 
@@ -76,3 +77,9 @@ To delete the deployed stack and associated resources:
 ```sh
 sam delete --stack-name TarotCardDrawApp --region "$AWS_REGION"
 ```
+
+## Alternative Deployment Versions
+
+There is a cross platform command line version (sorry, no illustrations!) available with binaries packaged for various operating systems - see [tarot-card-shuffle-draw](https://github.com/joshuamkite/tarot-card-shuffle-draw)
+
+There is a dockerised version with accompanying Helm chart that can be run in plain docker or installed on Kubernetes - see [tarot-card-shuffle-draw-web](https://github.com/joshuamkite/tarot-card-shuffle-draw-web). A pre-built Docker image accompanies each release on [GitHub Container Registry](https://github.com/joshuamkite/tarot-card-shuffle-draw-web/pkgs/container/tarot-card-shuffle-draw-web%2Ftarot_shuffle_draw)
