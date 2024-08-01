@@ -1,6 +1,6 @@
 # Tarot Card Shuffle Lambda
 
-Tarot Card Shuffle Draw is a free and open-source project that shuffles and returns a selection of Tarot cards. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. This port of the application is deployed as AWS Lambda microservices orchestrated with API Gateway and backed with S3 and CloudFront. There are other ports available - see [Alternative Deployment Ports](#alternative-deployment-ports) below.
+Tarot Card Shuffle Draw is a free and open-source project that shuffles and returns a selection of Tarot cards. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. This port of the application is deployed as AWS Lambda microservices orchestrated with API Gateway and backed with S3 and CloudFront. There are other ports available - see [Alternative Deployment Ports](#alternative-deployment-ports) below. You have a choice of deploying with or without a Route 53 'proper DNS' entry.
 
 - [Tarot Card Shuffle Lambda](#tarot-card-shuffle-lambda)
   - [Features](#features)
@@ -29,9 +29,11 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
 
 ### Steps
 
-1. **Build and Deploy the SAM Application:**
+1. **Build and Deploy the SAM Application with a Route53 entry:**
 
-    ```sh
+   Example command:
+
+ ```sh
    sam build && sam deploy \
        --stack-name TarotCardDrawApp \
        --capabilities CAPABILITY_IAM \
@@ -39,17 +41,37 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
        --resolve-s3 \
        --parameter-overrides ParameterKey=DomainName,ParameterValue=$DOMAINNAME \
                             ParameterKey=HostedZoneId,ParameterValue=$HOSTEDZONEID
-    ```
+ ```
+
+**OR**
+
+1. **Build and Deploy the SAM Application without an assigned DNS entry:**
+
+   Example command:
+
+
+```sh
+   sam build && sam deploy \
+       --stack-name TarotCardDrawApp \
+       --capabilities CAPABILITY_IAM \
+       --region eu-west-1 \
+       --resolve-s3 \
+       --template-file template-no-route53.yaml
+```
+
+**Then**
 
 2. **Upload Images to S3:**
-   - Use the provided script to upload images.
+   
+   Use the provided script to upload images.
    
    ```sh
    sh dev_tooling/images_to_s3.sh
    ```
 
 3. **Invalidate CloudFront Cache:**
-   - Invalidate the CloudFront cache to ensure updated content is served.
+   
+   Invalidate the CloudFront cache to ensure updated content is served.
    
    ```sh
    sh dev_tooling/cloudfront-invalidation.sh
@@ -73,6 +95,8 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
 ## Cleanup
 
 To delete the deployed stack and associated resources:
+
+Make sure the image bucket is empty and then:
 
 ```sh
 sam delete --stack-name TarotCardDrawApp --region "$AWS_REGION"
