@@ -1,6 +1,6 @@
 # Tarot Card Shuffle Lambda
 
-Tarot Card Shuffle Draw is a free and open-source project that shuffles and returns a selection of Tarot cards. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. 
+Tarot Card Shuffle Draw is a free and open-source project that shuffles and returns a selection of Tarot cards. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. This version of the application is deployed as AWS Lambda microservices orchestrated with API Gateway and backed with S3 and CloudFront. There are other versions available - see [Alternative Deployment Versions](#alternative-deployment-versions) below
 
 - [Tarot Card Shuffle Lambda](#tarot-card-shuffle-lambda)
   - [Features](#features)
@@ -32,23 +32,23 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
 1. **Build and Deploy the SAM Application:**
 
     ```sh
-sam build && sam deploy \
-    --stack-name TarotCardDrawApp \
-    --capabilities CAPABILITY_IAM \
-    --region eu-west-2 \
-    --resolve-s3 \
-    --parameter-overrides ParameterKey=DomainName,ParameterValue=$DOMAINNAME \
-                         ParameterKey=HostedZoneId,ParameterValue=$HOSTEDZONEID
+   sam build && sam deploy \
+       --stack-name TarotCardDrawApp \
+       --capabilities CAPABILITY_IAM \
+       --region eu-west-2 \
+       --resolve-s3 \
+       --parameter-overrides ParameterKey=DomainName,ParameterValue=$DOMAINNAME \
+                            ParameterKey=HostedZoneId,ParameterValue=$HOSTEDZONEID
     ```
 
-1. **Upload Images to S3:**
+2. **Upload Images to S3:**
    - Use the provided script to upload images.
    
    ```sh
    sh dev_tooling/images_to_s3.sh
    ```
 
-2. **Invalidate CloudFront Cache:**
+3. **Invalidate CloudFront Cache:**
    - Invalidate the CloudFront cache to ensure updated content is served.
    
    ```sh
