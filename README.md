@@ -82,4 +82,4 @@ sam delete --stack-name TarotCardDrawApp --region "$AWS_REGION"
 
 There is a cross platform command line port (sorry, no illustrations!) available with binaries packaged for various operating systems - see [tarot-card-shuffle-draw](https://github.com/joshuamkite/tarot-card-shuffle-draw)
 
-There is a dockerised port with accompanying Helm chart that can be run in plain docker or installed on Kubernetes - see [tarot-card-shuffle-draw-web](https://github.com/joshuamkite/tarot-card-shuffle-draw-web). A pre-built Docker image accompanies each release on [GitHub Container Registry](ghcr.io/joshuamkite/tarot-card-shuffle-draw-web/tarot_shuffle_draw)
+There is a dockerised port with accompanying Helm chart that can be run in plain docker or installed on Kubernetes - see [tarot-card-shuffle-draw-web](https://github.com/joshuamkite/tarot-card-shuffle-draw-web). 
