@@ -1,6 +1,6 @@
 # Tarot Card Shuffle Lambda
 
-Tarot Card Shuffle Draw is a free and open-source project that shuffles and returns a selection of Tarot cards. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. This port of the application is deployed as AWS Lambda microservices orchestrated with API Gateway and backed with S3 and CloudFront. There are other ports available - see [Alternative Deployment Ports](#alternative-deployment-ports) below. You have a choice of deploying with or without a Route 53 'proper DNS' entry.
+Tarot Card Shuffle Draw is a free and open-source project that shuffles and returns a selection of Tarot cards. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. This port of the application is deployed as AWS Lambda microservices orchestrated with API Gateway and backed with S3 and CloudFront. There are other ports available - see [Alternative Deployment Ports](#alternative-deployment-ports) below. You have a choice of deploying with or without a preassigned 'proper DNS' Route 53 entry and TLS certificate.
 
 - [Tarot Card Shuffle Lambda](#tarot-card-shuffle-lambda)
   - [Features](#features)
@@ -19,19 +19,20 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
 - **Reversed Cards**: Option to include reversed cards in the draw.
 - **Random Draw**: Utilizes high-quality randomness using `crypto/rand`.
 - **Web Interface**: User-friendly web interface for easy interaction.
-- **API Endpoints**: Flexible API for programmatic access.
+- **Microservice architecture**: Separate functions for each API.
 
 ## Deployment
 
 ### Prerequisites
 - AWS CLI configured with necessary permissions.
 - AWS SAM CLI installed.
+- GoLang installed.
 
 ### Steps
 
 1. **Build and Deploy the SAM Application:**
 
-   By default a defined DNS entry is required. If you don't want this, see below. 
+   By default a predefined DNS entry is required. If you don't want this, see alternative below. 
 
    Example command:
 
@@ -47,32 +48,32 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
 
 **OR**
 
-1. **Build and Deploy the SAM Application without an assigned DNS entry:**
+1. **Build and Deploy the SAM Application without a pre-assigned DNS entry:**
 
-Unfortunately, as at August 2024, there appears to be a bug with SAM that means that using the command flag `--template-file` to specify a template named something other than `template.yaml` means that the _source code and assets_ are uploaded rather than the built binaries and assets for the lambdas. If you wish to deploy without a preassigned DNS entry then you should rename/move the provided `template.yaml` and change the name of `template-no-domain.yaml` to `template.yaml`. You can then deploy without the parameter-overrides above, e.g. 
+   Unfortunately, as at August 2024, there appears to be a bug with SAM that means that using the command flag `--template-file` to specify a template named something other than the deafult `template.yaml` means that the _source code_ and assets are uploaded rather than the _built binaries_ and assets for the lambdas. If you wish to deploy without a preassigned DNS entry then you should rename/move the provided `template.yaml` and change the name of `template-no-domain.yaml` to `template.yaml`. You can then deploy without the parameter-overrides above, e.g. 
 
 ```sh
    sam build && sam deploy \
        --stack-name TarotCardDrawApp \
        --capabilities CAPABILITY_IAM \
        --region eu-west-1 \
-       --resolve-s3 \
+       --resolve-s3
 ```
 
 **Then**
 
-1. **Upload Images to S3:**
+2. **Upload Images to S3:**
    
-   Use the provided script to upload images.
+   If you are on a 'nix system you can use the provided script to upload images.
    
    ```sh
    sh dev_tooling/images_to_s3.sh
    ```
 
-2. **Invalidate CloudFront Cache:**
+3. **Invalidate CloudFront Cache:**
    
-   Invalidate the CloudFront cache to ensure updated content is served.
-   
+   Invalidate the CloudFront cache to ensure updated content is served. If you are on a 'nix system you can use the provided script:
+
    ```sh
    sh dev_tooling/cloudfront-invalidation.sh
    ```
@@ -80,6 +81,8 @@ Unfortunately, as at August 2024, there appears to be a bug with SAM that means 
 ## Usage
 
 ### Web Interface
+
+Service endpoint will be available at the output `ApiUrl` and additionally at the preassigned DNS entry if provided.
 
 1. **Choose the deck type**: Select Full Deck, Major Arcana only, or Minor Arcana only.
 2. **Select reversed cards option**: Decide whether to include reversed cards.
