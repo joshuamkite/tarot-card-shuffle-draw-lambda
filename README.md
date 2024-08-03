@@ -1,4 +1,4 @@
-# Tarot Card Draw Shuffle Lambda
+# Tarot Card Shuffle Draw Lambda
 
 Tarot Card Shuffle Draw is a free and open-source project that shuffles and returns a selection of Tarot cards. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. This port of the application is deployed as AWS Lambda microservices orchestrated with API Gateway and backed with S3 and CloudFront. There are other ports available - see [Alternative Deployment Ports](#alternative-deployment-ports) below. You have a choice of deploying with or without a preassigned 'proper DNS' Route 53 entry and TLS certificate.
 
