@@ -29,7 +29,9 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
 
 ### Steps
 
-1. **Build and Deploy the SAM Application with a Route53 entry:**
+1. **Build and Deploy the SAM Application:**
+
+   By default a defined DNS entry is required. If you don't want this, see below. 
 
    Example command:
 
@@ -47,8 +49,7 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
 
 1. **Build and Deploy the SAM Application without an assigned DNS entry:**
 
-   Example command:
-
+Unfortunately, as at August 2024, there appears to be a bug with SAM that means that using the command flag `--template-file` to specify a template named something other than `template.yaml` means that the _source code and assets_ are uploaded rather than the built binaries and assets for the lambdas. If you wish to deploy without a preassigned DNS entry then you should rename/move the provided `template.yaml` and change the name of `template-no-domain.yaml` to `template.yaml`. You can then deploy without the parameter-overrides above, e.g. 
 
 ```sh
    sam build && sam deploy \
@@ -56,12 +57,11 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
        --capabilities CAPABILITY_IAM \
        --region eu-west-1 \
        --resolve-s3 \
-       --template-file template-no-route53.yaml
 ```
 
 **Then**
 
-2. **Upload Images to S3:**
+1. **Upload Images to S3:**
    
    Use the provided script to upload images.
    
@@ -69,7 +69,7 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
    sh dev_tooling/images_to_s3.sh
    ```
 
-3. **Invalidate CloudFront Cache:**
+2. **Invalidate CloudFront Cache:**
    
    Invalidate the CloudFront cache to ensure updated content is served.
    

@@ -1,7 +1,12 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  AWS SAM template to deploy GoLang Lambda functions.
+  AWS SAM template to deploy Serverless Tarot Card Shuffle Draw Service
+
+Parameters:
+  OriginAccessControlConfigName:
+    Default: TarotImages
+    Type: String
 
 Globals:
   Function:
@@ -49,6 +54,7 @@ Resources:
   LicensePageFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: LicensePageFunction
       Handler: main
       CodeUri: licensePage/
       MemorySize: 128
@@ -65,7 +71,7 @@ Resources:
   TarotApi:
     Type: AWS::Serverless::HttpApi
     Properties:
-      StageName: $default
+      StageName: $default # Ensure we are using the $default stage
       AccessLogSettings:
         DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
         Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
@@ -75,8 +81,8 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/api-gateway/${TarotApi}/logs"
       RetentionInDays: 7
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
 
   TarotImagesBucket:
     Type: AWS::S3::Bucket
@@ -104,7 +110,7 @@ Resources:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
-        Name: TarotImagesOACNoRoute53
+        Name: !Ref OriginAccessControlConfigName
         Description: OAC for Tarot Images
         SigningProtocol: sigv4
         SigningBehavior: always
