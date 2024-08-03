@@ -1,6 +1,10 @@
 #!/bin/bash
 
 # Need to set AWS_REGION
+if [ -z "$AWS_REGION" ]; then
+    echo "AWS_REGION is not set. Please set the AWS_REGION environment variable."
+    exit 1
+fi
 
 # Variables
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)

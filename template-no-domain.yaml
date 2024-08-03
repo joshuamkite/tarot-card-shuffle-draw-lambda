@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Transform: "AWS::Serverless-2016-10-31"
+Transform: AWS::Serverless-2016-10-31
 Description: >
   AWS SAM template to deploy Serverless Tarot Card Shuffle Draw Service
 
@@ -7,14 +7,6 @@ Parameters:
   OriginAccessControlConfigName:
     Default: TarotImages
     Type: String
-
-  DomainName:
-    Type: String
-    Description: "The custom domain name for the API"
-
-  HostedZoneId:
-    Type: String
-    Description: "The ID of the Route 53 hosted zone for the domain"
 
 Globals:
   Function:
@@ -79,21 +71,10 @@ Resources:
   TarotApi:
     Type: AWS::Serverless::HttpApi
     Properties:
-      StageName: $default
+      StageName: $default # Ensure we are using the $default stage
       AccessLogSettings:
         DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
         Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
-      Domain:
-        DomainName: !Ref DomainName
-        CertificateArn: !Ref ApiCertificate
-        Route53:
-          HostedZoneId: !Ref HostedZoneId
-
-  ApiCertificate:
-    Type: AWS::CertificateManager::Certificate
-    Properties:
-      DomainName: !Ref DomainName
-      ValidationMethod: DNS
 
   ApiGatewayLogGroup:
     Type: AWS::Logs::LogGroup

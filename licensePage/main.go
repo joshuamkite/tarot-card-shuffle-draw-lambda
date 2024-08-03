@@ -13,7 +13,7 @@ import (
 var ginLambda *ginadapter.GinLambda
 
 func init() {
-	log.Printf("Gin cold start for showLicensePage")
+	// log.Printf("Gin cold start for showLicensePage")
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")
 	r.GET("/", showLicensePage)
@@ -26,7 +26,7 @@ func main() {
 }
 
 func licenseHandler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	log.Printf("Received request: %+v", req)
+	// log.Printf("Received request: %+v", req)
 	resp, err := ginLambda.Proxy(req)
 	if err != nil {
 		log.Printf("Error processing request: %v", err)
