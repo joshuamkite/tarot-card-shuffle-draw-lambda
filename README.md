@@ -50,7 +50,7 @@ Tarot Card Shuffle Draw is a free and open-source project that shuffles and retu
 
 1. **Build and Deploy the SAM Application without a pre-assigned DNS entry:**
 
-   Unfortunately, as at August 2024, there appears to be a bug with SAM that means that using the command flag `--template-file` to specify a template named something other than the deafult `template.yaml` means that the _source code_ and assets are uploaded rather than the _built binaries_ and assets for the lambdas. If you wish to deploy without a preassigned DNS entry then you should rename/move the provided `template.yaml` and change the name of `template-no-domain.yaml` to `template.yaml`. You can then deploy without the parameter-overrides above, e.g. 
+   Unfortunately, as at August 2024, there appears to be a bug with SAM that means that using the command flag `--template-file` to specify a template named something other than the default `template.yaml` means that the _source code_ and assets are uploaded rather than the _built binaries_ and assets for the lambdas. If you wish to deploy without a preassigned DNS entry then you should rename/move the provided `template.yaml` and change the name of `template-no-domain.yaml` to `template.yaml`. You can then deploy without the parameter-overrides above, e.g. 
 
 ```sh
    sam build && sam deploy \
