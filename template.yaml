@@ -16,6 +16,14 @@ Parameters:
     Type: String
     Description: "The ID of the Route 53 hosted zone for the domain"
 
+  DefaultThrottlingRateLimit:
+    Default: "100"
+    Type: Number
+
+  DefaultThrottlingBurstLimit:
+    Default: "200"
+    Type: Number
+
 Globals:
   Function:
     Runtime: provided.al2023
@@ -88,6 +96,9 @@ Resources:
         CertificateArn: !Ref ApiCertificate
         Route53:
           HostedZoneId: !Ref HostedZoneId
+      DefaultRouteSettings:
+        ThrottlingRateLimit: !Ref DefaultThrottlingRateLimit
+        ThrottlingBurstLimit: !Ref DefaultThrottlingBurstLimit
 
   ApiCertificate:
     Type: AWS::CertificateManager::Certificate

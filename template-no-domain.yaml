@@ -8,6 +8,14 @@ Parameters:
     Default: TarotImages
     Type: String
 
+  DefaultThrottlingRateLimit:
+    Default: "100"
+    Type: Number
+
+  DefaultThrottlingBurstLimit:
+    Default: "200"
+    Type: Number
+
 Globals:
   Function:
     Runtime: provided.al2023
@@ -75,6 +83,9 @@ Resources:
       AccessLogSettings:
         DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
         Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","userAgent":"$context.identity.userAgent","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
+      DefaultRouteSettings:
+        ThrottlingRateLimit: !Ref DefaultThrottlingRateLimit
+        ThrottlingBurstLimit: !Ref DefaultThrottlingBurstLimit
 
   ApiGatewayLogGroup:
     Type: AWS::Logs::LogGroup
