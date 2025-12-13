@@ -1,112 +1,238 @@
-# Tarot Card Shuffle Draw Lambda
+# Tarot Card Shuffle Draw - OpenTofu/Terraform Deployment
 
-Tarot Card Shuffle Draw is a free and open-source project that shuffles and returns a selection of Tarot cards. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. This port of the application is deployed as AWS Lambda microservices orchestrated with API Gateway and backed with S3 and CloudFront. There are other ports available - see [Alternative Deployment Ports](#alternative-deployment-ports) below. You have a choice of deploying with or without a preassigned 'proper DNS' Route 53 entry and TLS certificate.
+Serverless tarot card reading application deployed on AWS using OpenTofu/Terraform.
 
-- [Tarot Card Shuffle Lambda](#tarot-card-shuffle-lambda)
-  - [Features](#features)
-  - [Deployment](#deployment)
-    - [Prerequisites](#prerequisites)
-    - [Steps](#steps)
-  - [Usage](#usage)
-    - [Web Interface](#web-interface)
-    - [API Endpoints](#api-endpoints)
-  - [Cleanup](#cleanup)
-  - [Alternative Deployment Ports](#alternative-deployment-ports)
+## Architecture
 
-## Features
+- **API Gateway HTTP API** - RESTful endpoints for card drawing
+- **Lambda Functions** (Go) - Three functions for options page, draw logic, and license page
+- **S3 + CloudFront** - Static image hosting with CDN distribution
+- **CloudWatch** - Logging for all Lambda functions and API Gateway
 
-- **Deck Options**: Full Deck, Major Arcana only, Minor Arcana only.
-- **Reversed Cards**: Option to include reversed cards in the draw.
-- **Random Draw**: Utilizes high-quality randomness using `crypto/rand`.
-- **Web Interface**: User-friendly web interface for easy interaction.
-- **Microservice architecture**: Separate functions for each API.
+## Prerequisites
 
-## Deployment
+- [OpenTofu](https://opentofu.org/) >= 1.6.0 or [Terraform](https://www.terraform.io/) >= 1.6.0
+- AWS CLI configured with appropriate credentials
+- Go 1.21+ (for building Lambda functions)
+- Make
 
-### Prerequisites
-- AWS CLI configured with necessary permissions.
-- AWS SAM CLI installed.
-- GoLang installed.
+## Project Structure
 
-### Steps
-
-1. **Build and Deploy the SAM Application:**
-
-   By default a predefined DNS entry is required. If you don't want this, see alternative below. 
-
-   Example command:
-
- ```sh
-   sam build && sam deploy \
-       --stack-name TarotCardDrawApp \
-       --capabilities CAPABILITY_IAM \
-       --region eu-west-2 \
-       --resolve-s3 \
-       --parameter-overrides ParameterKey=DomainName,ParameterValue=$DOMAINNAME \
-                            ParameterKey=HostedZoneId,ParameterValue=$HOSTEDZONEID
- ```
-
-**OR**
-
-1. **Build and Deploy the SAM Application without a pre-assigned DNS entry:**
-
-   Unfortunately, as at August 2024, there appears to be a bug with SAM that means that using the command flag `--template-file` to specify a template named something other than the default `template.yaml` means that the _source code_ and assets are uploaded rather than the _built binaries_ and assets for the lambdas. If you wish to deploy without a preassigned DNS entry then you should rename/move the provided `template.yaml` and change the name of `template-no-domain.yaml` to `template.yaml`. You can then deploy without the parameter-overrides above, e.g. 
-
-```sh
-   sam build && sam deploy \
-       --stack-name TarotCardDrawApp \
-       --capabilities CAPABILITY_IAM \
-       --region eu-west-1 \
-       --resolve-s3
+```
+.
+├── versions.tf              # Terraform/provider version requirements
+├── main.tf                  # Data sources and locals
+├── variables.tf             # Input variables
+├── lambda.tf                # Lambda functions using terraform-aws-modules/lambda
+├── api_gateway.tf           # API Gateway HTTP API
+├── s3.tf                    # S3 bucket for images
+├── cloudfront.tf            # CloudFront distribution
+├── cloudwatch.tf            # CloudWatch log groups
+├── outputs.tf               # Output values
+└── terraform.tfvars.example # Example configuration
 ```
 
-**Then**
+## Quick Start
 
-2. **Upload Images to S3:**
-   
-   If you are on a 'nix system you can use the provided script to upload images.
-   
-   ```sh
-   sh dev_tooling/images_to_s3.sh
-   ```
+### 1. Build Lambda Functions
 
-3. **Invalidate CloudFront Cache:**
-   
-   Invalidate the CloudFront cache to ensure updated content is served. If you are on a 'nix system you can use the provided script:
+```bash
+# The Lambda module will automatically run 'make' in each directory
+# Just ensure the makefiles are set up correctly
+cd optionsPage && make && cd ..
+cd handleDraw && make && cd ..
+cd licensePage && make && cd ..
+```
 
-   ```sh
-   sh dev_tooling/cloudfront-invalidation.sh
-   ```
+### 2. Configure Variables
 
-## Usage
+```bash
+cp terraform.tfvars.example terraform.tfvars
+```
 
-### Web Interface
+Edit `terraform.tfvars`:
 
-Service endpoint will be available at the output `ApiUrl` and additionally at the preassigned DNS entry if provided.
+```hcl
+aws_region   = "us-east-1"
+environment  = "dev"
+project_name = "tarot"
+```
 
-1. **Choose the deck type**: Select Full Deck, Major Arcana only, or Minor Arcana only.
-2. **Select reversed cards option**: Decide whether to include reversed cards.
-3. **Specify the number of cards to draw**.
-4. **Click "Draw Cards"** to see the results.
+### 3. Deploy Infrastructure
 
-### API Endpoints
+```bash
+# Initialize Terraform
+tofu init
 
-- **GET /**: Displays the options page.
-- **POST /draw**: Handles drawing cards based on user input.
-- **GET /license**: Displays the license page.
+# Review planned changes
+tofu plan
+
+# Deploy
+tofu apply
+```
+
+The `terraform-aws-modules/lambda` module will automatically:
+- Build the Go binaries using the `make` command
+- Package them into zip files
+- Deploy to Lambda
+
+### 4. Upload Images to S3
+
+After deployment, upload tarot card images:
+
+```bash
+BUCKET_NAME=$(tofu output -raw images_bucket_name)
+aws s3 sync handleDraw/static/images/ s3://$BUCKET_NAME/images/
+```
+
+## Configuration Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `aws_region` | AWS region for deployment | `us-east-1` |
+| `project_name` | Project name prefix | `tarot` |
+| `environment` | Environment (dev/staging/prod) | `dev` |
+| `lambda_timeout` | Lambda timeout in seconds | `10` |
+| `lambda_memory_size` | Lambda memory in MB | `128` |
+| `log_retention_days` | CloudWatch log retention | `7` |
+| `default_throttling_rate_limit` | API rate limit | `100` |
+| `default_throttling_burst_limit` | API burst limit | `200` |
+
+## Outputs
+
+After deployment, view outputs:
+
+```bash
+tofu output
+```
+
+Key outputs:
+- `api_url` - API Gateway endpoint URL
+- `cloudfront_distribution_url` - CloudFront URL for images
+- `images_bucket_name` - S3 bucket name
+- `lambda_function_names` - Map of all Lambda function names
+
+## Testing
+
+Test the deployed API:
+
+```bash
+# Get the API URL
+API_URL=$(tofu output -raw api_url)
+
+# Test options page
+curl $API_URL
+
+# Test draw endpoint
+curl -X POST $API_URL/draw -H "Content-Type: application/json" -d '{"count": 3}'
+
+# Test license page
+curl $API_URL/license
+```
+
+## Updating Lambda Functions
+
+After code changes:
+
+```bash
+# Rebuild
+cd handleDraw && make && cd ..
+
+# Redeploy
+tofu apply
+```
+
+The Lambda module will detect changes and redeploy automatically.
+
+## Monitoring
+
+View logs:
+
+```bash
+# Lambda function logs
+aws logs tail /aws/lambda/tarot-dev-draw --follow
+aws logs tail /aws/lambda/tarot-dev-options-page --follow
+aws logs tail /aws/lambda/tarot-dev-license --follow
+
+# API Gateway logs
+aws logs tail /aws/api-gateway/tarot-dev --follow
+```
+
+## CloudFront Cache Management
+
+Invalidate CloudFront cache after uploading new images:
+
+```bash
+DISTRIBUTION_ID=$(tofu output -raw cloudfront_distribution_id)
+aws cloudfront create-invalidation \
+  --distribution-id $DISTRIBUTION_ID \
+  --paths "/*"
+```
 
 ## Cleanup
 
-To delete the deployed stack and associated resources:
+Remove all resources:
 
-Make sure the image bucket is empty and then:
+```bash
+# Empty S3 bucket first
+BUCKET_NAME=$(tofu output -raw images_bucket_name)
+aws s3 rm s3://$BUCKET_NAME --recursive
 
-```sh
-sam delete --stack-name TarotCardDrawApp --region "$AWS_REGION"
+# Destroy infrastructure
+tofu destroy
 ```
 
-## Alternative Deployment Ports
+## Remote State (Recommended)
 
-There is a cross platform command line port (sorry, no illustrations!) available with binaries packaged for various operating systems - see [tarot-card-shuffle-draw](https://github.com/joshuamkite/tarot-card-shuffle-draw)
+For team environments, configure S3 backend in `versions.tf`:
 
-There is a dockerised port with accompanying Helm chart that can be run in plain docker or installed on Kubernetes - see [tarot-card-shuffle-draw-web](https://github.com/joshuamkite/tarot-card-shuffle-draw-web). 
+```hcl
+terraform {
+  backend "s3" {
+    bucket = "your-terraform-state-bucket"
+    key    = "tarot/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+```
+
+Then initialize with backend:
+
+```bash
+tofu init \
+  -backend-config="bucket=your-backend-bucket" \
+  -backend-config="key=tarot/terraform.tfstate" \
+  -backend-config="region=us-east-1"
+```
+
+## Modules Used
+
+- `terraform-aws-modules/lambda/aws` (~> 8.1) - Lambda function packaging and deployment
+
+## Troubleshooting
+
+### Lambda Function Errors
+
+Check CloudWatch logs for detailed error messages:
+
+```bash
+aws logs tail /aws/lambda/tarot-dev-draw --follow
+```
+
+### API Gateway 502 Errors
+
+Usually indicates Lambda function errors. Check:
+1. Lambda function logs in CloudWatch
+2. Lambda function permissions
+3. Environment variables are set correctly
+
+### Images Not Loading
+
+Verify:
+1. Images uploaded to S3 bucket
+2. CloudFront distribution is deployed (can take 15-20 minutes)
+3. S3 bucket policy allows CloudFront access
+
+## License
+
+See [LICENSE](LICENSE) file for details.

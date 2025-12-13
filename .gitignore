@@ -1,3 +1,20 @@
 *.zip
 .aws-sam/
-vars-joshuakite-co-uk 
+vars-joshuakite-co-uk
+.env
+
+# Terraform/OpenTofu
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
