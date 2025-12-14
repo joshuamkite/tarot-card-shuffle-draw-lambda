@@ -10,3 +10,4 @@ vars-joshuakite-co-uk
 *.tfstate.*
 *.tfvars
 
+builds/

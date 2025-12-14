@@ -62,7 +62,7 @@ locals {
   api_routes = {
     options_page = {
       route_key  = "GET /"
-      lambda_key = "options-page"
+      lambda_key = "options"
     }
     draw_function = {
       route_key  = "POST /draw"
@@ -70,7 +70,7 @@ locals {
     }
     license_page = {
       route_key  = "GET /license"
-      lambda_key = "license"
+      lambda_key = "license-page"
     }
   }
 }

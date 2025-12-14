@@ -1,18 +1,37 @@
-# Define the binary name
+# Binary name
 BINARY = main
 
-# Define the build directory, use `$(ARTIFACTS_DIR)` provided by AWS SAM
-BUILD_DIR = $(ARTIFACTS_DIR)
+# Output directory for final zipped artifacts (repo root `builds/`)
+OUTPUT_DIR := $(abspath $(CURDIR)/../builds)
 
-# Default target executed when no arguments are given to make
-all: build-DrawFunction
+# Temporary build directory inside function folder
+BUILD_DIR := $(CURDIR)/.build
 
-# Build the binary for the specific function
-build-DrawFunction:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(BUILD_DIR)/$(BINARY) main.go
+# Function name inferred from directory name
+FN := $(notdir $(CURDIR))
+
+.PHONY: all build \:zip clean
+
+all: \:zip
+
+# Build binary into temporary build dir
+build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o $(BUILD_DIR)/$(BINARY) main.go
 	cp bootstrap $(BUILD_DIR)/bootstrap
 
-# Clean up the build directory
+# Create a deployment zip in `builds/<function>.zip` (used by terraform)
+
+\:zip:
+	rm -rf $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o $(BUILD_DIR)/$(BINARY) main.go
+	cp bootstrap $(BUILD_DIR)/bootstrap
+	# copy static files if present
+	cp -r static $(BUILD_DIR)/static 2>/dev/null || true
+	mkdir -p $(OUTPUT_DIR)
+	(cd $(BUILD_DIR) && zip -r $(OUTPUT_DIR)/$(FN).zip .)
+	rm -rf $(BUILD_DIR)
+
 clean:
-	rm -rf $(BUILD_DIR)/$(BINARY)
-	rm -rf $(BUILD_DIR)/bootstrap
+	rm -rf $(BUILD_DIR)
+	rm -f $(OUTPUT_DIR)/$(FN).zip
