@@ -1,4 +1,61 @@
-terraform-docs markdown table --output-file README.md --output-mode inject . 
+ Tarot Card Shuffle Draw Lambda
+
+Tarot Card Shuffle Draw is a free and open-source project that shuffles and returns a selection of Tarot cards. Users can choose different decks, specify the number of cards to draw, and include reversed cards in the draw. Public domain illustrations of the cards are presented with the results. This port of the application is deployed as AWS Lambda microservices orchestrated with API Gateway and backed with S3 and CloudFront. There are other ports available - see [Alternative Deployment Ports](#alternative-deployment-ports) below. You have a choice of deploying with or without a preassigned 'proper DNS' Route 53 entry and TLS certificate.
+
+- [Features](#features)
+- [Deployment](#deployment)
+  - [Prerequisites](#prerequisites)
+- [Usage](#usage)
+  - [Web Interface](#web-interface)
+  - [API Endpoints](#api-endpoints)
+- [Alternative Deployment Ports](#alternative-deployment-ports)
+- [Requirements](#requirements)
+- [Providers](#providers)
+- [Modules](#modules)
+- [Resources](#resources)
+- [Inputs](#inputs)
+- [Outputs](#outputs)
+
+## Features
+
+- **Deck Options**: Full Deck, Major Arcana only, Minor Arcana only.
+- **Reversed Cards**: Option to include reversed cards in the draw.
+- **Random Draw**: Utilizes high-quality randomness using `crypto/rand`.
+- **Web Interface**: User-friendly web interface for easy interaction.
+- **Microservice architecture**: Separate functions for each API.
+
+## Deployment
+
+### Prerequisites
+- GoLang 
+- Python
+
+```bash
+tofu apply 
+```
+
+## Usage
+
+### Web Interface
+
+Service endpoint will be available at the output `ApiUrl` and additionally at the preassigned DNS entry if provided.
+
+1. **Choose the deck type**: Select Full Deck, Major Arcana only, or Minor Arcana only.
+2. **Select reversed cards option**: Decide whether to include reversed cards.
+3. **Specify the number of cards to draw**.
+4. **Click "Draw Cards"** to see the results.
+
+### API Endpoints
+
+- **GET /**: Displays the options page.
+- **POST /draw**: Handles drawing cards based on user input.
+- **GET /license**: Displays the license page.
+
+## Alternative Deployment Ports
+
+There is a cross platform command line port (sorry, no illustrations!) available with binaries packaged for various operating systems - see [tarot-card-shuffle-draw](https://github.com/joshuamkite/tarot-card-shuffle-draw)
+
+There is a dockerised port with accompanying Helm chart that can be run in plain docker or installed on Kubernetes - see [tarot-card-shuffle-draw-web](https://github.com/joshuamkite/tarot-card-shuffle-draw-web). 
 
  <!-- BEGIN_TF_DOCS -->
 ## Requirements
