@@ -14,11 +14,7 @@ module "api_gateway" {
     expose_headers    = ["date"]
     max_age           = 86400
   }
-
-  # Create API only - routes and integrations will be separate resources
   create_routes_and_integrations = false
-
-  # Access logging
   stage_access_log_settings = {
     destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
     format = jsonencode({
@@ -33,8 +29,6 @@ module "api_gateway" {
       responseLength = "$context.responseLength"
     })
   }
-
-  # Throttling settings
   stage_default_route_settings = {
     throttling_burst_limit = var.default_throttling_burst_limit
     throttling_rate_limit  = var.default_throttling_rate_limit
@@ -45,7 +39,6 @@ module "api_gateway" {
 
 }
 
-# API Gateway Integrations
 resource "aws_apigatewayv2_integration" "lambda_integrations" {
   for_each               = module.lambda_functions
   api_id                 = module.api_gateway.api_id
@@ -57,7 +50,6 @@ resource "aws_apigatewayv2_integration" "lambda_integrations" {
   payload_format_version = "2.0"
 }
 
-# Local mapping for routes to Lambda functions
 locals {
   api_routes = {
     options_page = {
@@ -75,7 +67,6 @@ locals {
   }
 }
 
-# API Gateway Routes
 resource "aws_apigatewayv2_route" "api_routes" {
   for_each  = local.api_routes
   api_id    = module.api_gateway.api_id

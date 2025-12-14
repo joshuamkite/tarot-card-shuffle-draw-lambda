@@ -3,7 +3,6 @@ output "account_id" {
   value       = data.aws_caller_identity.current.account_id
 }
 
-# CloudFront Outputs
 output "cloudfront_distribution_id" {
   description = "CloudFront distribution ID"
   value       = aws_cloudfront_distribution.tarot_distribution.id
@@ -24,16 +23,19 @@ output "images_bucket_arn" {
   value       = aws_s3_bucket.tarot_images.arn
 }
 
-# S3 Bucket Outputs
 output "images_bucket_name" {
   description = "S3 Bucket name for Tarot Images"
   value       = aws_s3_bucket.tarot_images.id
 }
 
-# Lambda Function Outputs
 output "lambda_function_names" {
   description = "Map of Lambda function names"
   value = {
     for k, v in module.lambda_functions : k => v.lambda_function_name
   }
+}
+
+output "options_landing_page_url" {
+  description = "URL for the options landing page"
+  value       = "https://${var.domain_name}/"
 }

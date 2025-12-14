@@ -1,4 +1,3 @@
-# CloudFront Origin Access Control
 resource "aws_cloudfront_origin_access_control" "tarot_images_oac" {
   name                              = "${local.name_prefix}-oac"
   description                       = "OAC for Tarot Images"
@@ -7,7 +6,6 @@ resource "aws_cloudfront_origin_access_control" "tarot_images_oac" {
   signing_protocol                  = "sigv4"
 }
 
-# CloudFront Distribution
 resource "aws_cloudfront_distribution" "tarot_distribution" {
   enabled             = true
   is_ipv6_enabled     = true

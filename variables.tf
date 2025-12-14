@@ -1,15 +1,14 @@
 variable "aws_region" {
   description = "AWS region for deployment"
   type        = string
-  default     = "us-east-1"
+  default     = "eu-west-2"
 }
 
 variable "backend_bucket" {}
-variable "backend_key" {}
-variable "backend_region" {}
-variable "domain_name" {}
-variable "hosted_zone_name" {}
 
+variable "backend_key" {}
+
+variable "backend_region" {}
 
 variable "default_tags" {
   description = "Default tags to apply to all resources"
@@ -32,11 +31,15 @@ variable "default_throttling_rate_limit" {
   default     = 100
 }
 
+variable "domain_name" {}
+
 variable "environment" {
   description = "Environment name (dev, staging, prod)"
   type        = string
   default     = "dev"
 }
+
+variable "hosted_zone_name" {}
 
 variable "lambda_memory_size" {
   description = "Lambda function memory size in MB"
@@ -47,7 +50,7 @@ variable "lambda_memory_size" {
 variable "lambda_timeout" {
   description = "Lambda function timeout in seconds"
   type        = number
-  default     = 10
+  default     = 30
 }
 
 variable "log_retention_days" {
@@ -55,7 +58,6 @@ variable "log_retention_days" {
   type        = number
   default     = 7
 }
-
 
 variable "project_name" {
   description = "Name of the project"

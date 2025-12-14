@@ -1,4 +1,3 @@
-# IAM Role for Lambda Functions
 resource "aws_iam_role" "lambda_role" {
   name               = "${local.name_prefix}-lambda-role"
   assume_role_policy = data.aws_iam_policy_document.lambda_role.json
@@ -37,7 +36,6 @@ resource "aws_iam_role_policy_attachment" "lambda_policy" {
   policy_arn = aws_iam_policy.lambda_policy.arn
 }
 
-# Lambda Functions using terraform-aws-modules/lambda
 module "lambda_functions" {
   for_each = toset([
     "options",
@@ -56,7 +54,7 @@ module "lambda_functions" {
     path = "${path.module}/${each.key}"
     commands = [
       "make",
-      ":zip"
+      ":zip ../builds/${each.key}"
     ]
   }]
 
@@ -74,7 +72,6 @@ module "lambda_functions" {
   include_default_tag               = false
 }
 
-# Lambda Permissions for API Gateway
 resource "aws_lambda_permission" "api_gateway" {
   for_each      = module.lambda_functions
   statement_id  = "AllowAPIGatewayInvoke"

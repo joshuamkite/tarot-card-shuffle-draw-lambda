@@ -1,7 +1,2 @@
 #!/bin/sh
-
-# Set the default handler
-HANDLER=${_HANDLER:-main}
-
-# Execute the handler
-exec /var/task/${HANDLER}
+exec /var/task/main
