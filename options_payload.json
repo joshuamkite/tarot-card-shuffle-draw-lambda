@@ -1,0 +1,26 @@
+{
+  "version": "2.0",
+  "routeKey": "$default",
+  "rawPath": "/",
+  "rawQueryString": "",
+  "headers": {},
+  "requestContext": {
+    "accountId": "anonymous",
+    "apiId": "1234567890",
+    "domainName": "127.0.0.1:9000",
+    "domainPrefix": "127.0.0.1",
+    "http": {
+      "method": "GET",
+      "path": "/",
+      "protocol": "HTTP/1.1",
+      "sourceIp": "127.0.0.1",
+      "userAgent": "curl/7.64.1"
+    },
+    "requestId": "test-request",
+    "routeKey": "$default",
+    "stage": "$default",
+    "time": "14/Dec/2025:12:00:00 +0000",
+    "timeEpoch": 1765598400
+  },
+  "isBase64Encoded": false
+}

@@ -37,7 +37,7 @@ func main() {
 	url := "https://en.wikipedia.org/wiki/Rider%E2%80%93Waite_Tarot"
 
 	// Create a directory to save images
-	dir := "../../handleDraw/static/images"
+	dir := "../../draw/static/images"
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		fmt.Println("Error creating directory:", err)
 		return

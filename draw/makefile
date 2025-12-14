@@ -1,15 +1,14 @@
 # Define the binary name
 BINARY = main
 
-# Define the build directory, use `$(ARTIFACTS_DIR)` provided by AWS SAM
-BUILD_DIR = $(ARTIFACTS_DIR)
+BUILD_DIR := $(abspath $(CURDIR)/../builds/$(notdir $(CURDIR)))
 
 # Default target executed when no arguments are given to make
-all: build-DrawFunction
+all: build
 
 # Build the binary for the specific function
-build-DrawFunction:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(BUILD_DIR)/$(BINARY) main.go
+build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o $(BUILD_DIR)/$(BINARY) main.go
 	cp bootstrap $(BUILD_DIR)/bootstrap
 
 # Clean up the build directory
