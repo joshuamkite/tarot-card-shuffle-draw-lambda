@@ -1,4 +1,4 @@
-module handleDraw
+module draw
 
 go 1.22.5
 

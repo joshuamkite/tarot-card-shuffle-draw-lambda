@@ -1,238 +1,77 @@
-# Tarot Card Shuffle Draw - OpenTofu/Terraform Deployment
+terraform-docs markdown table --output-file README.md --output-mode inject . 
 
-Serverless tarot card reading application deployed on AWS using OpenTofu/Terraform.
+ <!-- BEGIN_TF_DOCS -->
+## Requirements
 
-## Architecture
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.10.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >=6.26.0 |
 
-- **API Gateway HTTP API** - RESTful endpoints for card drawing
-- **Lambda Functions** (Go) - Three functions for options page, draw logic, and license page
-- **S3 + CloudFront** - Static image hosting with CDN distribution
-- **CloudWatch** - Logging for all Lambda functions and API Gateway
+## Providers
 
-## Prerequisites
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.26.0 |
 
-- [OpenTofu](https://opentofu.org/) >= 1.6.0 or [Terraform](https://www.terraform.io/) >= 1.6.0
-- AWS CLI configured with appropriate credentials
-- Go 1.21+ (for building Lambda functions)
-- Make
+## Modules
 
-## Project Structure
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_api_gateway"></a> [api\_gateway](#module\_api\_gateway) | terraform-aws-modules/apigateway-v2/aws | >= 6.0 |
+| <a name="module_lambda_functions"></a> [lambda\_functions](#module\_lambda\_functions) | terraform-aws-modules/lambda/aws | ~> 8.1 |
 
-```
-.
-├── versions.tf              # Terraform/provider version requirements
-├── main.tf                  # Data sources and locals
-├── variables.tf             # Input variables
-├── lambda.tf                # Lambda functions using terraform-aws-modules/lambda
-├── api_gateway.tf           # API Gateway HTTP API
-├── s3.tf                    # S3 bucket for images
-├── cloudfront.tf            # CloudFront distribution
-├── cloudwatch.tf            # CloudWatch log groups
-├── outputs.tf               # Output values
-└── terraform.tfvars.example # Example configuration
-```
+## Resources
 
-## Quick Start
+| Name | Type |
+|------|------|
+| [aws_apigatewayv2_integration.lambda_integrations](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/apigatewayv2_integration) | resource |
+| [aws_apigatewayv2_route.api_routes](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/apigatewayv2_route) | resource |
+| [aws_cloudfront_distribution.tarot_distribution](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_distribution) | resource |
+| [aws_cloudfront_origin_access_control.tarot_images_oac](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_origin_access_control) | resource |
+| [aws_cloudwatch_log_group.api_gateway_logs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
+| [aws_iam_policy.lambda_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
+| [aws_iam_role.lambda_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role_policy_attachment.lambda_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
+| [aws_lambda_permission.api_gateway](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission) | resource |
+| [aws_s3_bucket.tarot_images](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
+| [aws_s3_bucket_policy.tarot_images_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_policy) | resource |
+| [aws_s3_bucket_public_access_block.tarot_images](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block) | resource |
+| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_iam_policy_document.lambda_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_iam_policy_document.lambda_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 
-### 1. Build Lambda Functions
+## Inputs
 
-```bash
-# The Lambda module will automatically run 'make' in each directory
-# Just ensure the makefiles are set up correctly
-cd optionsPage && make && cd ..
-cd handleDraw && make && cd ..
-cd licensePage && make && cd ..
-```
-
-### 2. Configure Variables
-
-```bash
-cp terraform.tfvars.example terraform.tfvars
-```
-
-Edit `terraform.tfvars`:
-
-```hcl
-aws_region   = "us-east-1"
-environment  = "dev"
-project_name = "tarot"
-```
-
-### 3. Deploy Infrastructure
-
-```bash
-# Initialize Terraform
-tofu init
-
-# Review planned changes
-tofu plan
-
-# Deploy
-tofu apply
-```
-
-The `terraform-aws-modules/lambda` module will automatically:
-- Build the Go binaries using the `make` command
-- Package them into zip files
-- Deploy to Lambda
-
-### 4. Upload Images to S3
-
-After deployment, upload tarot card images:
-
-```bash
-BUCKET_NAME=$(tofu output -raw images_bucket_name)
-aws s3 sync handleDraw/static/images/ s3://$BUCKET_NAME/images/
-```
-
-## Configuration Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `aws_region` | AWS region for deployment | `us-east-1` |
-| `project_name` | Project name prefix | `tarot` |
-| `environment` | Environment (dev/staging/prod) | `dev` |
-| `lambda_timeout` | Lambda timeout in seconds | `10` |
-| `lambda_memory_size` | Lambda memory in MB | `128` |
-| `log_retention_days` | CloudWatch log retention | `7` |
-| `default_throttling_rate_limit` | API rate limit | `100` |
-| `default_throttling_burst_limit` | API burst limit | `200` |
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | AWS region for deployment | `string` | `"us-east-1"` | no |
+| <a name="input_backend_bucket"></a> [backend\_bucket](#input\_backend\_bucket) | n/a | `any` | n/a | yes |
+| <a name="input_backend_key"></a> [backend\_key](#input\_backend\_key) | n/a | `any` | n/a | yes |
+| <a name="input_backend_region"></a> [backend\_region](#input\_backend\_region) | n/a | `any` | n/a | yes |
+| <a name="input_default_tags"></a> [default\_tags](#input\_default\_tags) | Default tags to apply to all resources | `map(string)` | <pre>{<br/>  "ManagedBy": "opentofu",<br/>  "Project": "tarot-card-shuffle"<br/>}</pre> | no |
+| <a name="input_default_throttling_burst_limit"></a> [default\_throttling\_burst\_limit](#input\_default\_throttling\_burst\_limit) | Default API Gateway throttling burst limit | `number` | `200` | no |
+| <a name="input_default_throttling_rate_limit"></a> [default\_throttling\_rate\_limit](#input\_default\_throttling\_rate\_limit) | Default API Gateway throttling rate limit | `number` | `100` | no |
+| <a name="input_domain_name"></a> [domain\_name](#input\_domain\_name) | n/a | `any` | n/a | yes |
+| <a name="input_environment"></a> [environment](#input\_environment) | Environment name (dev, staging, prod) | `string` | `"dev"` | no |
+| <a name="input_hosted_zone_name"></a> [hosted\_zone\_name](#input\_hosted\_zone\_name) | n/a | `any` | n/a | yes |
+| <a name="input_lambda_memory_size"></a> [lambda\_memory\_size](#input\_lambda\_memory\_size) | Lambda function memory size in MB | `number` | `128` | no |
+| <a name="input_lambda_timeout"></a> [lambda\_timeout](#input\_lambda\_timeout) | Lambda function timeout in seconds | `number` | `10` | no |
+| <a name="input_log_retention_days"></a> [log\_retention\_days](#input\_log\_retention\_days) | CloudWatch log retention in days | `number` | `7` | no |
+| <a name="input_origin_access_control_name"></a> [origin\_access\_control\_name](#input\_origin\_access\_control\_name) | Name for the CloudFront Origin Access Control | `string` | `"TarotImages"` | no |
+| <a name="input_project_name"></a> [project\_name](#input\_project\_name) | Name of the project | `string` | `"tarot"` | no |
 
 ## Outputs
 
-After deployment, view outputs:
+| Name | Description |
+|------|-------------|
+| <a name="output_account_id"></a> [account\_id](#output\_account\_id) | AWS Account ID |
+| <a name="output_cloudfront_distribution_id"></a> [cloudfront\_distribution\_id](#output\_cloudfront\_distribution\_id) | CloudFront distribution ID |
+| <a name="output_cloudfront_distribution_url"></a> [cloudfront\_distribution\_url](#output\_cloudfront\_distribution\_url) | CloudFront distribution URL |
+| <a name="output_cloudfront_domain_name"></a> [cloudfront\_domain\_name](#output\_cloudfront\_domain\_name) | CloudFront distribution domain name |
+| <a name="output_images_bucket_arn"></a> [images\_bucket\_arn](#output\_images\_bucket\_arn) | S3 Bucket ARN for Tarot Images |
+| <a name="output_images_bucket_name"></a> [images\_bucket\_name](#output\_images\_bucket\_name) | S3 Bucket name for Tarot Images |
+| <a name="output_lambda_function_names"></a> [lambda\_function\_names](#output\_lambda\_function\_names) | Map of Lambda function names |
+<!-- END_TF_DOCS -->
 
-```bash
-tofu output
-```
-
-Key outputs:
-- `api_url` - API Gateway endpoint URL
-- `cloudfront_distribution_url` - CloudFront URL for images
-- `images_bucket_name` - S3 bucket name
-- `lambda_function_names` - Map of all Lambda function names
-
-## Testing
-
-Test the deployed API:
-
-```bash
-# Get the API URL
-API_URL=$(tofu output -raw api_url)
-
-# Test options page
-curl $API_URL
-
-# Test draw endpoint
-curl -X POST $API_URL/draw -H "Content-Type: application/json" -d '{"count": 3}'
-
-# Test license page
-curl $API_URL/license
-```
-
-## Updating Lambda Functions
-
-After code changes:
-
-```bash
-# Rebuild
-cd handleDraw && make && cd ..
-
-# Redeploy
-tofu apply
-```
-
-The Lambda module will detect changes and redeploy automatically.
-
-## Monitoring
-
-View logs:
-
-```bash
-# Lambda function logs
-aws logs tail /aws/lambda/tarot-dev-draw --follow
-aws logs tail /aws/lambda/tarot-dev-options-page --follow
-aws logs tail /aws/lambda/tarot-dev-license --follow
-
-# API Gateway logs
-aws logs tail /aws/api-gateway/tarot-dev --follow
-```
-
-## CloudFront Cache Management
-
-Invalidate CloudFront cache after uploading new images:
-
-```bash
-DISTRIBUTION_ID=$(tofu output -raw cloudfront_distribution_id)
-aws cloudfront create-invalidation \
-  --distribution-id $DISTRIBUTION_ID \
-  --paths "/*"
-```
-
-## Cleanup
-
-Remove all resources:
-
-```bash
-# Empty S3 bucket first
-BUCKET_NAME=$(tofu output -raw images_bucket_name)
-aws s3 rm s3://$BUCKET_NAME --recursive
-
-# Destroy infrastructure
-tofu destroy
-```
-
-## Remote State (Recommended)
-
-For team environments, configure S3 backend in `versions.tf`:
-
-```hcl
-terraform {
-  backend "s3" {
-    bucket = "your-terraform-state-bucket"
-    key    = "tarot/terraform.tfstate"
-    region = "us-east-1"
-  }
-}
-```
-
-Then initialize with backend:
-
-```bash
-tofu init \
-  -backend-config="bucket=your-backend-bucket" \
-  -backend-config="key=tarot/terraform.tfstate" \
-  -backend-config="region=us-east-1"
-```
-
-## Modules Used
-
-- `terraform-aws-modules/lambda/aws` (~> 8.1) - Lambda function packaging and deployment
-
-## Troubleshooting
-
-### Lambda Function Errors
-
-Check CloudWatch logs for detailed error messages:
-
-```bash
-aws logs tail /aws/lambda/tarot-dev-draw --follow
-```
-
-### API Gateway 502 Errors
-
-Usually indicates Lambda function errors. Check:
-1. Lambda function logs in CloudWatch
-2. Lambda function permissions
-3. Environment variables are set correctly
-
-### Images Not Loading
-
-Verify:
-1. Images uploaded to S3 bucket
-2. CloudFront distribution is deployed (can take 15-20 minutes)
-3. S3 bucket policy allows CloudFront access
-
-## License
-
-See [LICENSE](LICENSE) file for details.

@@ -1,6 +1,6 @@
 # CloudFront Origin Access Control
 resource "aws_cloudfront_origin_access_control" "tarot_images_oac" {
-  name                              = var.origin_access_control_name
+  name                              = "${local.name_prefix}-oac"
   description                       = "OAC for Tarot Images"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
@@ -17,14 +17,14 @@ resource "aws_cloudfront_distribution" "tarot_distribution" {
 
   origin {
     domain_name              = aws_s3_bucket.tarot_images.bucket_regional_domain_name
-    origin_id                = "TarotImagesBucketOrigin"
+    origin_id                = "${local.name_prefix}-s3-origin"
     origin_access_control_id = aws_cloudfront_origin_access_control.tarot_images_oac.id
   }
 
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "TarotImagesBucketOrigin"
+    target_origin_id = "${local.name_prefix}-s3-origin"
 
     forwarded_values {
       query_string = false

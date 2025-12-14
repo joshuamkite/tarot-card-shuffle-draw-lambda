@@ -40,9 +40,9 @@ resource "aws_iam_role_policy_attachment" "lambda_policy" {
 # Lambda Functions using terraform-aws-modules/lambda
 module "lambda_functions" {
   for_each = toset([
-    "options-page",
+    "options",
     "draw",
-    "license"
+    "license-page"
   ])
 
   source  = "terraform-aws-modules/lambda/aws"
@@ -53,7 +53,7 @@ module "lambda_functions" {
   runtime       = "provided.al2023"
 
   source_path = [{
-    path = "${path.module}/${each.key == "options-page" ? "optionsPage" : each.key == "draw" ? "handleDraw" : "licensePage"}"
+    path = "${path.module}/${each.key}"
     commands = [
       "make",
       ":zip"
@@ -81,5 +81,5 @@ resource "aws_lambda_permission" "api_gateway" {
   action        = "lambda:InvokeFunction"
   function_name = each.value.lambda_function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.tarot_api.execution_arn}/*/*"
+  source_arn    = "${module.api_gateway.api_execution_arn}/*/*"
 }

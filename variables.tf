@@ -4,17 +4,12 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "project_name" {
-  description = "Name of the project"
-  type        = string
-  default     = "tarot"
-}
+variable "backend_bucket" {}
+variable "backend_key" {}
+variable "backend_region" {}
+variable "domain_name" {}
+variable "hosted_zone_name" {}
 
-variable "environment" {
-  description = "Environment name (dev, staging, prod)"
-  type        = string
-  default     = "dev"
-}
 
 variable "default_tags" {
   description = "Default tags to apply to all resources"
@@ -25,10 +20,10 @@ variable "default_tags" {
   }
 }
 
-variable "origin_access_control_name" {
-  description = "Name for the CloudFront Origin Access Control"
-  type        = string
-  default     = "TarotImages"
+variable "default_throttling_burst_limit" {
+  description = "Default API Gateway throttling burst limit"
+  type        = number
+  default     = 200
 }
 
 variable "default_throttling_rate_limit" {
@@ -37,16 +32,10 @@ variable "default_throttling_rate_limit" {
   default     = 100
 }
 
-variable "default_throttling_burst_limit" {
-  description = "Default API Gateway throttling burst limit"
-  type        = number
-  default     = 200
-}
-
-variable "lambda_timeout" {
-  description = "Lambda function timeout in seconds"
-  type        = number
-  default     = 10
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+  default     = "dev"
 }
 
 variable "lambda_memory_size" {
@@ -55,8 +44,21 @@ variable "lambda_memory_size" {
   default     = 128
 }
 
+variable "lambda_timeout" {
+  description = "Lambda function timeout in seconds"
+  type        = number
+  default     = 10
+}
+
 variable "log_retention_days" {
   description = "CloudWatch log retention in days"
   type        = number
   default     = 7
+}
+
+
+variable "project_name" {
+  description = "Name of the project"
+  type        = string
+  default     = "tarot"
 }

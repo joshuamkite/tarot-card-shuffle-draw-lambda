@@ -1,4 +1,4 @@
-module optinosPage
+module license-page
 
 go 1.22.5
 

@@ -1,4 +1,4 @@
-module licensePage
+module options
 
 go 1.22.5
 
