@@ -1,7 +1,9 @@
 terraform {
   backend "s3" {
-    bucket = var.tfstate_bucket
-    key    = var.tfstate_key
-    region = var.tfstate_region
+    bucket  = var.backend_bucket
+    key     = var.backend_key
+    region  = var.backend_region
+    encrypt = true
   }
 }
+

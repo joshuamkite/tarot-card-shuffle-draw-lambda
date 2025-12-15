@@ -19,17 +19,17 @@ variable "tags" {
   type        = map(string)
 }
 
-variable "tfstate_bucket" {
+variable "backend_bucket" {
   description = "S3 bucket for Terraform state"
   type        = string
 }
 
-variable "tfstate_key" {
+variable "backend_key" {
   description = "S3 key for Terraform state"
   type        = string
 }
 
-variable "tfstate_region" {
+variable "backend_region" {
   description = "AWS region for Terraform state bucket"
   type        = string
 }

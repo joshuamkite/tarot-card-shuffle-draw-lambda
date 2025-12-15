@@ -11,3 +11,4 @@ vars-joshuakite-co-uk
 *.tfvars
 
 builds/
+frontend/node_modules/

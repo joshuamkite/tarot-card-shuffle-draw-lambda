@@ -39,3 +39,9 @@ output "options_landing_page_url" {
   description = "URL for the options landing page"
   value       = "https://${var.domain_name}/"
 }
+
+output "api_gateway_invoke_url" {
+  description = "The invocation URL for the API Gateway"
+  value       = module.api_gateway.api_endpoint
+}
+

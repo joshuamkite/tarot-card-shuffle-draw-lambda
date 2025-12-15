@@ -46,7 +46,7 @@ This directory contains the Terraform configuration for deploying the React fron
 
    After deployment, upload the React build to S3:
    ```bash
-   BUCKET_NAME=$(terraform output -raw s3_bucket_id)
+   BUCKET_NAME=$(tofu output -raw s3_bucket_id)
    aws s3 sync ../frontend/dist s3://$BUCKET_NAME/ --delete
    ```
 
@@ -69,18 +69,17 @@ This configuration uses the [static-website-s3-cloudfront-acm](https://registry.
 
 ## Integration with Backend API
 
-The React frontend communicates with the Lambda backend API. Set the API URL:
+The React frontend communicates with the Lambda backend API. Set the API URL during the frontend build process:
 
-1. Create `frontend/.env` file:
-   ```
-   VITE_API_URL=https://your-api-gateway-url.execute-api.region.amazonaws.com
-   ```
-
-2. Get the API Gateway URL from the main infrastructure:
-   ```bash
-   cd ..
-   terraform output options_landing_page_url
-   ```
+1.  **Obtain the API Gateway URL**: After deploying the backend infrastructure, retrieve the API Gateway's invoke URL using Terraform output:
+    ```bash
+    terraform output -raw api_gateway_invoke_url
+    ```
+2.  **Set `VITE_API_URL`**: When building the React frontend, ensure the `VITE_API_URL` environment variable is set to the value obtained in the previous step. For example, if you're building locally:
+    ```bash
+    VITE_API_URL=$(terraform output -raw api_gateway_invoke_url) npm run build
+    ```
+    Or, if using a CI/CD pipeline, configure it to pass the `api_gateway_invoke_url` output as the `VITE_API_URL` environment variable to the build command.
 
 ## Deployment Workflow
 
