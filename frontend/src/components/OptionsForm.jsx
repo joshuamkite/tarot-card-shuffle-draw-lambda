@@ -66,33 +66,20 @@ const OptionsForm = ({ onDraw, isLoading }) => {
                     demonstration/ entertainment purposes only and should not be used as
                     a substitute for professional advice. The project is written in Go and
                     this port uses AWS Lambda with a React frontend.
+                    <br />
+                    <br />
 
                     The <a href="https://github.com/joshuamkite/tarot-card-shuffle-draw-lambda">source code is available on GitHub</a> and is licensed under the
                     GNU Affero General Public License. Copyright (C) 2024 Joshua Kite
+                    <br />
+                    <br />
+
+                    <a href="https://www.joshuakite.co.uk">Visit my website</a>
 
                 </pre>
-                <pre>
-                    Copyright (C) 2024 Joshua Kite
 
-                    This program is free software: you can redistribute it and/or modify
-                    it under the terms of the GNU Affero General Public License as
-                    published by the Free Software Foundation, either version 3 of the
-                    License, or (at your option) any later version.
-
-                    This program is distributed in the hope that it will be useful,
-                    but WITHOUT ANY WARRANTY; without even the implied warranty of
-                    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-                    GNU Affero General Public License for more details.
-
-                    You should have received a copy of the GNU Affero General Public License
-                    along with this program. If not, see
-                    <a href="https://www.gnu.org/licenses/"> https://www.gnu.org/licenses/</a>
-                </pre>
-                <a href="#/license">Read the License</a>
-                <br /><br />
-                <a href="https://www.joshuakite.co.uk">Visit my website</a>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
