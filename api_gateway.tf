@@ -9,8 +9,8 @@ module "api_gateway" {
   cors_configuration = {
     allow_credentials = false
     allow_headers     = ["content-type", "authorization"]
-    allow_methods     = ["GET", "POST", "OPTIONS"]
-    allow_origins     = ["*"]
+    allow_methods     = ["POST", "OPTIONS"]
+    allow_origins     = ["https://${var.domain_name}"]
     expose_headers    = ["date"]
     max_age           = 86400
   }
@@ -51,18 +51,11 @@ resource "aws_apigatewayv2_integration" "lambda_integrations" {
 }
 
 locals {
+  # Only keep the draw function route - options and license are now handled by React
   api_routes = {
-    options_page = {
-      route_key  = "GET /"
-      lambda_key = "options"
-    }
     draw_function = {
       route_key  = "POST /draw"
       lambda_key = "draw"
-    }
-    license_page = {
-      route_key  = "GET /license"
-      lambda_key = "license-page"
     }
   }
 }

@@ -1,0 +1,3 @@
+- [x] ensure only our frontend can call our backend
+- [x] themeing support (dark/light)
+- [x] remove docs crap around migration . Initially we want to be able to deploy in parallel using different URLs, later replace.

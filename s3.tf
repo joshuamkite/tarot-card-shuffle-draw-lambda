@@ -45,3 +45,29 @@ resource "aws_s3_object" "card" {
   source = "${path.module}/assets/images/${each.value}"
   etag   = filemd5("${path.module}/assets/images/${each.value}")
 }
+
+# Upload React frontend build artifacts
+locals {
+  mime_types = {
+    ".html" = "text/html"
+    ".css"  = "text/css"
+    ".js"   = "application/javascript"
+    ".json" = "application/json"
+    ".png"  = "image/png"
+    ".jpg"  = "image/jpeg"
+    ".jpeg" = "image/jpeg"
+    ".gif"  = "image/gif"
+    ".svg"  = "image/svg+xml"
+    ".ico"  = "image/x-icon"
+  }
+}
+
+resource "aws_s3_object" "frontend_files" {
+  for_each = fileset("${path.module}/frontend/dist", "**")
+
+  bucket       = aws_s3_bucket.tarot_images.id
+  key          = each.value
+  source       = "${path.module}/frontend/dist/${each.value}"
+  etag         = filemd5("${path.module}/frontend/dist/${each.value}")
+  content_type = lookup(local.mime_types, regex("\\.[^.]+$", each.value), "application/octet-stream")
+}

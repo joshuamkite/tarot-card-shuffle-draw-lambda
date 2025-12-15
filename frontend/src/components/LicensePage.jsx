@@ -1,18 +1,6 @@
-<!DOCTYPE html>
-<html>
+import React from 'react';
 
-<head>
-    <title>License</title>
-    <style>
-        body {
-            font-family: sans-serif;
-        }
-    </style>
-</head>
-
-<body>
-    <h1>License</h1>
-    <pre>
+const licenseText = `
 GNU AFFERO GENERAL PUBLIC LICENSE
 Version 3, 19 November 2007
 
@@ -557,8 +545,7 @@ arrangement, you convey, or propagate by procuring conveyance of, a
 covered work, and grant a patent license to some of the parties
 receiving the covered work authorizing them to use, propagate, modify
 or convey a specific copy of the covered work, then the patent license
-you grant is automatically extended to all recipients of the covered
-work and works based on it.
+you grant is automatically extended to all recipients of the covered work and works based on it.
 
 A patent license is "discriminatory" if it does not include within
 the scope of its coverage, prohibits the exercise of, or is
@@ -661,8 +648,15 @@ Program, unless a warranty or assumption of liability accompanies a
 copy of the Program in return for a fee.
 
 END OF TERMS AND CONDITIONS
-</pre>
-    <a href="/">Back to Home</a>
-</body>
+`;
 
-</html>
+const LicensePage = () => {
+    return (
+        <div style={{ fontFamily: 'sans-serif' }}>
+            <h1>License</h1>
+            <pre>{licenseText}</pre>
+        </div>
+    );
+};
+
+export default LicensePage;

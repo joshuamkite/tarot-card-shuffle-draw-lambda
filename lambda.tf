@@ -38,9 +38,7 @@ resource "aws_iam_role_policy_attachment" "lambda_policy" {
 
 module "lambda_functions" {
   for_each = toset([
-    "options",
-    "draw",
-    "license-page"
+    "draw"
   ])
 
   source  = "terraform-aws-modules/lambda/aws"

@@ -2,22 +2,15 @@ package main
 
 import (
 	"crypto/rand"
-	"embed"
-	"html/template"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 )
-
-// Embed the templates only
-//
-//go:embed static/templates/*
-var content embed.FS
 
 type tarotDeck struct {
 	Number   string `json:"number"`
@@ -26,18 +19,28 @@ type tarotDeck struct {
 	Image    string `json:"image"`
 }
 
+type drawRequest struct {
+	DeckSize    string `json:"deckSize"`
+	DeckReverse string `json:"deckReverse"`
+	NumCards    int    `json:"numCards"`
+}
+
+type drawResponse struct {
+	DrawnCards []tarotDeck `json:"drawnCards"`
+	Message    string      `json:"message"`
+}
+
+type errorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
 var (
 	drawLambda    *httpadapter.HandlerAdapterV2
-	tmpl          *template.Template
 	cloudFrontURL = os.Getenv("CLOUDFRONT_URL")
 )
 
 func init() {
-	// log.Printf("Cold start for handleDraw")
-
-	// Parse templates from the embedded filesystem
-	tmpl = template.Must(template.ParseFS(content, "static/templates/*"))
-
 	// Add a handler for the draw path
 	http.HandleFunc("/draw", handleDraw)
 
@@ -62,7 +65,7 @@ func drawHandler(req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPRes
 	if resp.Headers == nil {
 		resp.Headers = map[string]string{}
 	}
-	resp.Headers["Content-Type"] = "text/html"
+	resp.Headers["Content-Type"] = "application/json"
 	return events.APIGatewayV2HTTPResponse{
 		StatusCode: resp.StatusCode,
 		Headers:    resp.Headers,
@@ -71,31 +74,49 @@ func drawHandler(req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPRes
 }
 
 func handleDraw(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	deckSize := r.FormValue("deckSize")
-	deckReverse := r.FormValue("deckReverse")
-	numCardsStr := r.FormValue("numCards")
-
-	if deckSize == "" || deckReverse == "" || numCardsStr == "" {
-		tmpl.ExecuteTemplate(w, "error.html", map[string]interface{}{
-			"message": "Sorry I could not find the options to draw your cards",
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(errorResponse{
+			Error:   "method_not_allowed",
+			Message: "Only POST requests are allowed",
 		})
 		return
 	}
 
-	numCards, err := strconv.Atoi(numCardsStr)
-	if err != nil || numCards < 1 {
-		numCards = 8
+	// Decode JSON request body
+	var req drawRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errorResponse{
+			Error:   "invalid_request",
+			Message: "Invalid JSON in request body",
+		})
+		return
 	}
 
-	decks := getDeck(deckSize, deckReverse)
+	// Validate required fields
+	if req.DeckSize == "" || req.DeckReverse == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errorResponse{
+			Error:   "missing_parameters",
+			Message: "deckSize and deckReverse are required",
+		})
+		return
+	}
+
+	// Default numCards if not provided or invalid
+	if req.NumCards < 1 {
+		req.NumCards = 8
+	}
+
+	decks := getDeck(req.DeckSize, req.DeckReverse)
 	if decks == nil {
-		tmpl.ExecuteTemplate(w, "error.html", map[string]interface{}{
-			"message": "Sorry I could not find the options to draw your cards",
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errorResponse{
+			Error:   "invalid_deck_options",
+			Message: "Invalid deck size or reverse option",
 		})
 		return
 	}
@@ -103,31 +124,25 @@ func handleDraw(w http.ResponseWriter, r *http.Request) {
 	totalCards := len(decks)
 
 	message := ""
-	if numCards > totalCards {
-		numCards = totalCards
+	if req.NumCards > totalCards {
+		req.NumCards = totalCards
 		message = "There are no more cards to display."
 	}
 
 	shuffledDeck := shuffle(decks)
-	drawnCards := shuffledDeck[:numCards]
-
-	// Add logging for debugging
-	// log.Printf("CloudFront URL: %s", cloudFrontURL)
+	drawnCards := shuffledDeck[:req.NumCards]
 
 	// Update image URLs to use CloudFront
 	for i := range drawnCards {
 		drawnCards[i].Image = cloudFrontURL + "/images/" + drawnCards[i].Image
-		// log.Printf("Image URL: %s", drawnCards[i].Image) // Log each image URL
 	}
 
-	data := map[string]interface{}{
-		"drawnCards":    drawnCards,
-		"message":       message,
-		"CloudFrontURL": cloudFrontURL,
-	}
-
-	tmpl.ExecuteTemplate(w, "result.html", data)
-	// log.Printf("Drawn cards: %+v", drawnCards)
+	// Send JSON response
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(drawResponse{
+		DrawnCards: drawnCards,
+		Message:    message,
+	})
 }
 
 // Functions for generating the deck, shuffling, etc. remain the same
