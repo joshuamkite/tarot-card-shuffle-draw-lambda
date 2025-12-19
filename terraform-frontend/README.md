@@ -53,7 +53,7 @@ This directory contains the Terraform configuration for deploying the React fron
 5. **Invalidate CloudFront cache**
 
    ```bash
-   DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
+   DISTRIBUTION_ID=$(tofu output -raw cloudfront_distribution_id)
    aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
    ```
 
@@ -71,33 +71,46 @@ This configuration uses the [static-website-s3-cloudfront-acm](https://registry.
 
 The React frontend communicates with the Lambda backend API. Set the API URL during the frontend build process:
 
-1.  **Obtain the API Gateway URL**: After deploying the backend infrastructure, retrieve the API Gateway's invoke URL using Terraform output:
+1.  **Obtain the API Gateway URL**: After deploying the backend infrastructure, use the custom domain URL (not the raw API Gateway URL):
     ```bash
-    terraform output -raw api_gateway_invoke_url
+    # From the backend directory
+    cd ../
+    source .env
+    # The API URL should be: https://tarot-shuffle-draw-react-backend.joshuakite.co.uk
+    # Or get it from terraform output:
+    tofu output -raw options_landing_page_url
     ```
-2.  **Set `VITE_API_URL`**: When building the React frontend, ensure the `VITE_API_URL` environment variable is set to the value obtained in the previous step. For example, if you're building locally:
+    
+    **Important**: Use the custom domain URL, not `api_gateway_invoke_url`. The raw API Gateway endpoint will not work without a stage name.
+
+2.  **Set `VITE_API_URL`**: When building the React frontend, ensure the `VITE_API_URL` environment variable is set to your backend custom domain:
     ```bash
-    VITE_API_URL=$(terraform output -raw api_gateway_invoke_url) npm run build
+    # Use your backend custom domain (from .env TF_VAR_domain_name)
+    VITE_API_URL=https://tarot-shuffle-draw-react-backend.joshuakite.co.uk npm run build
     ```
-    Or, if using a CI/CD pipeline, configure it to pass the `api_gateway_invoke_url` output as the `VITE_API_URL` environment variable to the build command.
+    Or, if using a CI/CD pipeline, configure it to pass the backend custom domain as the `VITE_API_URL` environment variable to the build command.
 
 ## Deployment Workflow
 
 For subsequent deployments:
 
 ```bash
-# Build frontend
-cd frontend && npm run build && cd ..
+# Build frontend with correct API URL
+cd frontend
+VITE_API_URL=https://tarot-shuffle-draw-react-backend.joshuakite.co.uk npm run build
+cd ..
 
 # Upload to S3
 cd terraform-frontend
-BUCKET_NAME=$(terraform output -raw s3_bucket_id)
+BUCKET_NAME=$(tofu output -raw s3_bucket_id)
 aws s3 sync ../frontend/dist s3://$BUCKET_NAME/ --delete
 
 # Invalidate cache
-DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
+DISTRIBUTION_ID=$(tofu output -raw cloudfront_distribution_id)
 aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
 ```
+
+**Note**: Always specify `VITE_API_URL` when building to ensure the frontend uses the correct API endpoint.
 
 ## Outputs
 
