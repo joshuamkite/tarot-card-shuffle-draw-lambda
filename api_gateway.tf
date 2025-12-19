@@ -10,7 +10,7 @@ module "api_gateway" {
     allow_credentials = false
     allow_headers     = ["content-type", "authorization"]
     allow_methods     = ["POST", "OPTIONS"]
-    allow_origins     = ["https://${var.domain_name}"]
+    allow_origins     = ["https://tarot-react.joshuakite.co.uk"]
     expose_headers    = ["date"]
     max_age           = 86400
   }
