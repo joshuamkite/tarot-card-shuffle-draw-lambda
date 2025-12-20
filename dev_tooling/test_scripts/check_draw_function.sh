@@ -1,10 +1,19 @@
 #!/bin/bash
+# API Gateway v2 (HTTP API) inspection script
+# Checks routes, integrations, and tests the /draw endpoint
 
-# Set your API ID and Stage Name
-API_ID="7iti2j5bfb"
+# Set your API ID and Stage Name (update these values for your deployment)
+API_ID="${API_ID:-YOUR_API_ID_HERE}"
 STAGE_NAME="\$default"
 LAMBDA_FUNCTION_NAME="DrawFunction"
-API_URL="https://${API_ID}.execute-api.eu-west-2.amazonaws.com/${STAGE_NAME}/draw"
+AWS_REGION="${AWS_REGION:-eu-west-2}"
+API_URL="https://${API_ID}.execute-api.${AWS_REGION}.amazonaws.com/${STAGE_NAME}/draw"
+
+if [ "$API_ID" = "YOUR_API_ID_HERE" ]; then
+	echo "Error: Please set API_ID environment variable or update the script"
+	echo "Usage: API_ID=your-api-id ./check_draw_function.sh"
+	exit 1
+fi
 
 # List API Gateways
 echo "Listing API Gateways..."

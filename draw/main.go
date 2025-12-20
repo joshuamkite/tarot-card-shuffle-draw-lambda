@@ -2,22 +2,13 @@ package main
 
 import (
 	"crypto/rand"
-	"embed"
-	"html/template"
-	"log"
+	"encoding/json"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 )
-
-// Embed the templates only
-//
-//go:embed static/templates/*
-var content embed.FS
 
 type tarotDeck struct {
 	Number   string `json:"number"`
@@ -26,108 +17,131 @@ type tarotDeck struct {
 	Image    string `json:"image"`
 }
 
+type drawRequest struct {
+	DeckSize    string `json:"deckSize"`
+	DeckReverse string `json:"deckReverse"`
+	NumCards    int    `json:"numCards"`
+}
+
+type drawResponse struct {
+	DrawnCards []tarotDeck `json:"drawnCards"`
+	Message    string      `json:"message"`
+}
+
+type errorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
 var (
-	drawLambda    *httpadapter.HandlerAdapterV2
-	tmpl          *template.Template
 	cloudFrontURL = os.Getenv("CLOUDFRONT_URL")
 )
-
-func init() {
-	// log.Printf("Cold start for handleDraw")
-
-	// Parse templates from the embedded filesystem
-	tmpl = template.Must(template.ParseFS(content, "static/templates/*"))
-
-	// Add a handler for the draw path
-	http.HandleFunc("/draw", handleDraw)
-
-	// Initialize the Lambda handler with the default HTTP mux
-	drawLambda = httpadapter.NewV2(http.DefaultServeMux)
-}
 
 func main() {
 	lambda.Start(drawHandler)
 }
 
 func drawHandler(req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
-	resp, err := drawLambda.Proxy(req)
-	if err != nil {
-		log.Printf("Error processing request: %v", err)
+	// CORS headers for all responses
+	corsHeaders := map[string]string{
+		"Content-Type":                 "application/json",
+		"Access-Control-Allow-Origin":  "https://tarot-react.joshuakite.co.uk",
+		"Access-Control-Allow-Methods": "POST, OPTIONS",
+		"Access-Control-Allow-Headers": "content-type, authorization",
+	}
+
+	// Handle OPTIONS preflight request
+	if req.RequestContext.HTTP.Method == "OPTIONS" {
 		return events.APIGatewayV2HTTPResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       err.Error(),
+			StatusCode: http.StatusOK,
+			Headers:    corsHeaders,
 		}, nil
 	}
 
-	if resp.Headers == nil {
-		resp.Headers = map[string]string{}
-	}
-	resp.Headers["Content-Type"] = "text/html"
-	return events.APIGatewayV2HTTPResponse{
-		StatusCode: resp.StatusCode,
-		Headers:    resp.Headers,
-		Body:       resp.Body,
-	}, nil
-}
-
-func handleDraw(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	deckSize := r.FormValue("deckSize")
-	deckReverse := r.FormValue("deckReverse")
-	numCardsStr := r.FormValue("numCards")
-
-	if deckSize == "" || deckReverse == "" || numCardsStr == "" {
-		tmpl.ExecuteTemplate(w, "error.html", map[string]interface{}{
-			"message": "Sorry I could not find the options to draw your cards",
+	// Only allow POST for actual requests
+	if req.RequestContext.HTTP.Method != "POST" {
+		body, _ := json.Marshal(errorResponse{
+			Error:   "method_not_allowed",
+			Message: "Only POST requests are allowed",
 		})
-		return
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: http.StatusMethodNotAllowed,
+			Headers:    corsHeaders,
+			Body:       string(body),
+		}, nil
 	}
 
-	numCards, err := strconv.Atoi(numCardsStr)
-	if err != nil || numCards < 1 {
-		numCards = 8
+	// Decode JSON request body
+	var drawReq drawRequest
+	if err := json.Unmarshal([]byte(req.Body), &drawReq); err != nil {
+		body, _ := json.Marshal(errorResponse{
+			Error:   "invalid_request",
+			Message: "Invalid JSON in request body",
+		})
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: http.StatusBadRequest,
+			Headers:    corsHeaders,
+			Body:       string(body),
+		}, nil
 	}
 
-	decks := getDeck(deckSize, deckReverse)
+	// Validate required fields
+	if drawReq.DeckSize == "" || drawReq.DeckReverse == "" {
+		body, _ := json.Marshal(errorResponse{
+			Error:   "missing_parameters",
+			Message: "deckSize and deckReverse are required",
+		})
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: http.StatusBadRequest,
+			Headers:    corsHeaders,
+			Body:       string(body),
+		}, nil
+	}
+
+	// Default numCards if not provided or invalid
+	if drawReq.NumCards < 1 {
+		drawReq.NumCards = 8
+	}
+
+	decks := getDeck(drawReq.DeckSize, drawReq.DeckReverse)
 	if decks == nil {
-		tmpl.ExecuteTemplate(w, "error.html", map[string]interface{}{
-			"message": "Sorry I could not find the options to draw your cards",
+		body, _ := json.Marshal(errorResponse{
+			Error:   "invalid_deck_options",
+			Message: "Invalid deck size or reverse option",
 		})
-		return
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: http.StatusBadRequest,
+			Headers:    corsHeaders,
+			Body:       string(body),
+		}, nil
 	}
 
 	totalCards := len(decks)
 
 	message := ""
-	if numCards > totalCards {
-		numCards = totalCards
+	if drawReq.NumCards > totalCards {
+		drawReq.NumCards = totalCards
 		message = "There are no more cards to display."
 	}
 
 	shuffledDeck := shuffle(decks)
-	drawnCards := shuffledDeck[:numCards]
-
-	// Add logging for debugging
-	// log.Printf("CloudFront URL: %s", cloudFrontURL)
+	drawnCards := shuffledDeck[:drawReq.NumCards]
 
 	// Update image URLs to use CloudFront
 	for i := range drawnCards {
 		drawnCards[i].Image = cloudFrontURL + "/images/" + drawnCards[i].Image
-		// log.Printf("Image URL: %s", drawnCards[i].Image) // Log each image URL
 	}
 
-	data := map[string]interface{}{
-		"drawnCards":    drawnCards,
-		"message":       message,
-		"CloudFrontURL": cloudFrontURL,
-	}
-
-	tmpl.ExecuteTemplate(w, "result.html", data)
-	// log.Printf("Drawn cards: %+v", drawnCards)
+	// Send JSON response
+	body, _ := json.Marshal(drawResponse{
+		DrawnCards: drawnCards,
+		Message:    message,
+	})
+	return events.APIGatewayV2HTTPResponse{
+		StatusCode: http.StatusOK,
+		Headers:    corsHeaders,
+		Body:       string(body),
+	}, nil
 }
 
 // Functions for generating the deck, shuffling, etc. remain the same
