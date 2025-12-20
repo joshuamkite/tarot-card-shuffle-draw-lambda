@@ -56,7 +56,7 @@ resource "null_resource" "build_frontend" {
 
   provisioner "local-exec" {
     working_dir = "${path.module}/../frontend"
-    command     = "VITE_API_URL=https://${var.domain_name} npm run build"
+    command     = "npm install && VITE_API_URL=https://${var.domain_name} npm run build"
   }
 }
 
@@ -76,12 +76,13 @@ resource "aws_s3_object" "frontend_files" {
 # Invalidate CloudFront cache after uploading new files
 resource "null_resource" "invalidate_cloudfront" {
   triggers = {
-    # Invalidate whenever frontend files change
-    frontend_hash = sha256(join("", [for f in fileset("${path.module}/../frontend/dist", "**") : filemd5("${path.module}/../frontend/dist/${f}")]))
+    # Invalidate whenever source files or API URL changes (same as build triggers)
+    api_url       = "https://${var.domain_name}"
+    frontend_hash = sha256(join("", [for f in fileset("${path.module}/../frontend/src", "**") : filesha256("${path.module}/../frontend/src/${f}")]))
   }
 
   provisioner "local-exec" {
-    command = "aws cloudfront create-invalidation --distribution-id ${module.frontend_website.cloudfront_distribution_id} --paths '/*'"
+    command = "aws cloudfront create-invalidation --distribution-id ${module.frontend_website.cloudfront_distribution_id} --paths '/index.html' '/'"
   }
 
   depends_on = [aws_s3_object.frontend_files]
