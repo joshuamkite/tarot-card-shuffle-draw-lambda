@@ -1,8 +1,3 @@
-*.zip
-.aws-sam/
-vars-joshuakite-co-uk
-.env
-
 # Terraform/OpenTofu
 .terraform/
 .terraform.lock.hcl
