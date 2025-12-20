@@ -68,7 +68,7 @@ function App() {
         </button>
       </footer>
 
-      {showLicense && <LicensePage />}
+      {showLicense && <LicensePage onClose={toggleLicense} />}
     </div>
   );
 }
