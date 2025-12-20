@@ -3,13 +3,11 @@ package main
 import (
 	"crypto/rand"
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/awslabs/aws-lambda-go-api-proxy/httpadapter"
 )
 
 type tarotDeck struct {
@@ -36,101 +34,98 @@ type errorResponse struct {
 }
 
 var (
-	drawLambda    *httpadapter.HandlerAdapterV2
 	cloudFrontURL = os.Getenv("CLOUDFRONT_URL")
 )
-
-func init() {
-	// Add a handler for the draw path
-	http.HandleFunc("/draw", handleDraw)
-
-	// Initialize the Lambda handler with the default HTTP mux
-	drawLambda = httpadapter.NewV2(http.DefaultServeMux)
-}
 
 func main() {
 	lambda.Start(drawHandler)
 }
 
 func drawHandler(req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
-	resp, err := drawLambda.Proxy(req)
-	if err != nil {
-		log.Printf("Error processing request: %v", err)
+	// CORS headers for all responses
+	corsHeaders := map[string]string{
+		"Content-Type":                 "application/json",
+		"Access-Control-Allow-Origin":  "https://tarot-react.joshuakite.co.uk",
+		"Access-Control-Allow-Methods": "POST, OPTIONS",
+		"Access-Control-Allow-Headers": "content-type, authorization",
+	}
+
+	// Handle OPTIONS preflight request
+	if req.RequestContext.HTTP.Method == "OPTIONS" {
 		return events.APIGatewayV2HTTPResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       err.Error(),
+			StatusCode: http.StatusOK,
+			Headers:    corsHeaders,
 		}, nil
 	}
 
-	if resp.Headers == nil {
-		resp.Headers = map[string]string{}
-	}
-	resp.Headers["Content-Type"] = "application/json"
-	return events.APIGatewayV2HTTPResponse{
-		StatusCode: resp.StatusCode,
-		Headers:    resp.Headers,
-		Body:       resp.Body,
-	}, nil
-}
-
-func handleDraw(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(errorResponse{
+	// Only allow POST for actual requests
+	if req.RequestContext.HTTP.Method != "POST" {
+		body, _ := json.Marshal(errorResponse{
 			Error:   "method_not_allowed",
 			Message: "Only POST requests are allowed",
 		})
-		return
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: http.StatusMethodNotAllowed,
+			Headers:    corsHeaders,
+			Body:       string(body),
+		}, nil
 	}
 
 	// Decode JSON request body
-	var req drawRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{
+	var drawReq drawRequest
+	if err := json.Unmarshal([]byte(req.Body), &drawReq); err != nil {
+		body, _ := json.Marshal(errorResponse{
 			Error:   "invalid_request",
 			Message: "Invalid JSON in request body",
 		})
-		return
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: http.StatusBadRequest,
+			Headers:    corsHeaders,
+			Body:       string(body),
+		}, nil
 	}
 
 	// Validate required fields
-	if req.DeckSize == "" || req.DeckReverse == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{
+	if drawReq.DeckSize == "" || drawReq.DeckReverse == "" {
+		body, _ := json.Marshal(errorResponse{
 			Error:   "missing_parameters",
 			Message: "deckSize and deckReverse are required",
 		})
-		return
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: http.StatusBadRequest,
+			Headers:    corsHeaders,
+			Body:       string(body),
+		}, nil
 	}
 
 	// Default numCards if not provided or invalid
-	if req.NumCards < 1 {
-		req.NumCards = 8
+	if drawReq.NumCards < 1 {
+		drawReq.NumCards = 8
 	}
 
-	decks := getDeck(req.DeckSize, req.DeckReverse)
+	decks := getDeck(drawReq.DeckSize, drawReq.DeckReverse)
 	if decks == nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{
+		body, _ := json.Marshal(errorResponse{
 			Error:   "invalid_deck_options",
 			Message: "Invalid deck size or reverse option",
 		})
-		return
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: http.StatusBadRequest,
+			Headers:    corsHeaders,
+			Body:       string(body),
+		}, nil
 	}
 
 	totalCards := len(decks)
 
 	message := ""
-	if req.NumCards > totalCards {
-		req.NumCards = totalCards
+	if drawReq.NumCards > totalCards {
+		drawReq.NumCards = totalCards
 		message = "There are no more cards to display."
 	}
 
 	shuffledDeck := shuffle(decks)
-	drawnCards := shuffledDeck[:req.NumCards]
+	drawnCards := shuffledDeck[:drawReq.NumCards]
 
 	// Update image URLs to use CloudFront
 	for i := range drawnCards {
@@ -138,11 +133,15 @@ func handleDraw(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send JSON response
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(drawResponse{
+	body, _ := json.Marshal(drawResponse{
 		DrawnCards: drawnCards,
 		Message:    message,
 	})
+	return events.APIGatewayV2HTTPResponse{
+		StatusCode: http.StatusOK,
+		Headers:    corsHeaders,
+		Body:       string(body),
+	}, nil
 }
 
 // Functions for generating the deck, shuffling, etc. remain the same
