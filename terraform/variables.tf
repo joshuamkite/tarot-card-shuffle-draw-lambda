@@ -39,6 +39,17 @@ variable "environment" {
   default     = "dev"
 }
 
+variable "frontend_domain_name" {
+  description = "Domain name for the React frontend"
+  type        = string
+}
+
+variable "frontend_parent_zone_name" {
+  description = "Parent hosted zone name for frontend (for subdomains). If not set, uses frontend_domain_name"
+  type        = string
+  default     = ""
+}
+
 variable "hosted_zone_name" {}
 
 variable "lambda_memory_size" {
@@ -63,16 +74,4 @@ variable "project_name" {
   description = "Name of the project"
   type        = string
   default     = "tarot"
-}
-
-# Frontend variables
-variable "frontend_domain_name" {
-  description = "Domain name for the React frontend"
-  type        = string
-}
-
-variable "frontend_parent_zone_name" {
-  description = "Parent hosted zone name for frontend (for subdomains). If not set, uses frontend_domain_name"
-  type        = string
-  default     = ""
 }
