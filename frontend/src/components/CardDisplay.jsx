@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 const CardDisplay = ({ drawnCards, message, onReset }) => {
     return (
         <div className="card-display">
-            <h1>Tarot Draw Result</h1>
             <button onClick={onReset} className="reset-button">
                 Return to Draw Options
             </button>
