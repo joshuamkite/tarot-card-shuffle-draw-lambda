@@ -199,9 +199,42 @@ button[type="submit"]:disabled {
 
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
   margin: 2rem 0;
+  width: 100%;
+}
+
+/* Desktop and large screens - 4 columns for layouts like 2 rows of 4 */
+@media (min-width: 1200px) {
+  .cards-container {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Medium-large screens - 3 columns */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .cards-container {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* Tablet screens - 2 columns */
+@media (min-width: 600px) and (max-width: 899px) {
+  .cards-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* Mobile screens - 1 column */
+@media (max-width: 599px) {
+  .cards-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
 .card {
@@ -216,7 +249,7 @@ button[type="submit"]:disabled {
 
 .card img {
   width: 100%;
-  max-width: 300px;
+  max-width: 100%;
   height: auto;
   border-radius: 4px;
   box-shadow: 0 2px 8px var(--card-shadow);
@@ -369,10 +402,6 @@ footer button:hover {
 @media (max-width: 768px) {
   .app {
     padding: 1rem;
-  }
-
-  .cards-container {
-    grid-template-columns: 1fr;
   }
 
   .license-container {
