@@ -1,8 +1,9 @@
 // API service for interacting with the tarot draw backend
 
 const getApiUrl = () => {
-    // Use environment variable if available, otherwise use a default for development
-    return import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    // In production, use the environment variable
+    // In development, use empty string to leverage Vite proxy
+    return import.meta.env.VITE_API_URL || '';
 };
 
 export const drawCards = async (deckSize, deckReverse, numCards) => {
