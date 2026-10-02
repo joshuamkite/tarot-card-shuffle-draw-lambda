@@ -58,7 +58,7 @@ resource "null_resource" "build_frontend" {
 
   provisioner "local-exec" {
     working_dir = "${path.module}/../frontend"
-    command     = "npm install && VITE_API_URL=https://${var.domain_name} npm run build"
+    command     = "bun install --frozen-lockfile && VITE_API_URL=https://${var.domain_name} bun run build"
   }
 }
 

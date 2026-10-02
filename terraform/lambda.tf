@@ -42,7 +42,7 @@ module "lambda_functions" {
   ])
 
   source  = "terraform-aws-modules/lambda/aws"
-  version = "~> 8.1"
+  version = "~> 8.9"
 
   function_name = "${local.name_prefix}-${each.key}"
   handler       = "bootstrap"
