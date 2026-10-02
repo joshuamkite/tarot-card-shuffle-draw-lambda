@@ -6,13 +6,13 @@
   --border-color: #ddd;
   --input-border: #ccc;
   --input-bg: white;
-  --button-bg: #4CAF50;
+  --button-bg: #4caf50;
   --button-hover: #45a049;
   --error-bg: #fee;
   --error-border: #fcc;
   --error-text: #c00;
   --info-bg: #f9f9f9;
-  --link-color: #4CAF50;
+  --link-color: #4caf50;
   --shadow: rgba(0, 0, 0, 0.1);
   --card-shadow: rgba(0, 0, 0, 0.2);
 }
@@ -25,7 +25,7 @@
   --border-color: #444;
   --input-border: #555;
   --input-bg: #333;
-  --button-bg: #4CAF50;
+  --button-bg: #4caf50;
   --button-hover: #45a049;
   --error-bg: #4a1a1a;
   --error-border: #6a2a2a;
@@ -42,7 +42,9 @@ body {
   padding: 20px;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -57,7 +59,9 @@ body {
   border-radius: 8px;
   box-shadow: 0 2px 4px var(--shadow);
   position: relative;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* Theme Toggle */
@@ -75,7 +79,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease;
   z-index: 100;
 }
 
@@ -137,7 +143,9 @@ body {
   color: var(--text-primary);
   border-radius: 4px;
   font-size: 1rem;
-  transition: border-color 0.3s ease, background-color 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    background-color 0.3s ease;
 }
 
 .form-group select:focus,
@@ -148,7 +156,7 @@ body {
 
 button[type="submit"],
 .reset-button {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   padding: 0.75rem 1.5rem;
   border: none;
@@ -384,7 +392,15 @@ footer {
   text-align: center;
 }
 
-footer button {
+.footer-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.footer-button {
+  display: inline-block;
   background-color: var(--button-bg);
   color: white;
   padding: 0.75rem 1.5rem;
@@ -392,10 +408,14 @@ footer button {
   border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
+  font-family: inherit;
+  line-height: normal;
+  text-decoration: none;
 }
 
-footer button:hover {
+.footer-button:hover {
   background-color: var(--button-hover);
+  color: white;
 }
 
 /* Responsive */

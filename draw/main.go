@@ -33,10 +33,6 @@ type errorResponse struct {
 	Message string `json:"message"`
 }
 
-var (
-	cloudFrontURL = os.Getenv("CLOUDFRONT_URL")
-)
-
 func main() {
 	lambda.Start(drawHandler)
 }
@@ -129,7 +125,7 @@ func drawHandler(req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPRes
 
 	// Update image URLs to use CloudFront
 	for i := range drawnCards {
-		drawnCards[i].Image = cloudFrontURL + "/images/" + drawnCards[i].Image
+		drawnCards[i].Image = os.Getenv("CLOUDFRONT_URL") + "/images/" + drawnCards[i].Image
 	}
 
 	// Send JSON response

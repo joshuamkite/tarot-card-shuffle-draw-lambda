@@ -31,9 +31,10 @@ Tarot card shuffle and draw application with a React frontend and AWS Lambda bac
 ## Tech Stack
 
 ### Frontend (`/frontend`)
-- React 19.2.0
-- Vite 7.2.4
+- React 19.3
+- Vite 8
 - PropTypes for type checking
+- Biome for lint and format (`bun run lint`, `bun run check`)
 - CSS custom properties for theming
 - Environment variables via `VITE_API_URL`
 
@@ -56,8 +57,8 @@ Tarot card shuffle and draw application with a React frontend and AWS Lambda bac
 1. **Frontend**:
    ```bash
    cd frontend
-   npm install
-   npm run dev
+   bun install
+   bun run dev
    ```
    - Dev server runs on http://localhost:5173
    - Vite proxy forwards `/draw` to production API (bypasses CORS)
@@ -73,7 +74,7 @@ Tarot card shuffle and draw application with a React frontend and AWS Lambda bac
 
 - **Production Build**: Set `VITE_API_URL` during build
   ```bash
-  VITE_API_URL=https://api.example.com npm run build
+  VITE_API_URL=https://api.example.com bun run build
   ```
 - **Local Development**: Uses Vite proxy (no env var needed)
 
@@ -152,7 +153,7 @@ terraform/
 ### Frontend Deployment
 ```bash
 cd frontend
-VITE_API_URL=https://tarot-shuffle-draw-react-backend.joshuakite.co.uk npm run build
+VITE_API_URL=https://tarot-shuffle-draw-react-backend.joshuakite.co.uk bun run build
 # Upload dist/ to S3 bucket
 # Invalidate CloudFront cache
 ./dev_tooling/cloudfront-invalidation.sh
@@ -219,10 +220,10 @@ curl -X POST https://tarot-shuffle-draw-react-backend.joshuakite.co.uk/draw \
 
 ```bash
 # Frontend dev server
-cd frontend && npm run dev
+cd frontend && bun run dev
 
 # Frontend build
-cd frontend && VITE_API_URL=<url> npm run build
+cd frontend && VITE_API_URL=<url> bun run build
 
 # Backend tests
 cd draw && go test -v

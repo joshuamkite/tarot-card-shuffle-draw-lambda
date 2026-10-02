@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 
 const licenseText = `
 GNU AFFERO GENERAL PUBLIC LICENSE
@@ -648,35 +648,35 @@ Program, unless a warranty or assumption of liability accompanies a
 copy of the Program in return for a fee.
 
 END OF TERMS AND CONDITIONS
-`;
+`
 
 const LicensePage = ({ onClose }) => {
-    // Process license text: split into paragraphs, remove hard line breaks within paragraphs
-    const processedText = licenseText
-        .split('\n\n')  // Split on double newlines (paragraphs)
-        .map(para => para.replace(/\n/g, ' ').trim())  // Remove single newlines within paragraphs
-        .filter(para => para.length > 0);  // Remove empty paragraphs
+  // Process license text: split into paragraphs, remove hard line breaks within paragraphs
+  const processedText = licenseText
+    .split('\n\n') // Split on double newlines (paragraphs)
+    .map((para) => para.replace(/\n/g, ' ').trim()) // Remove single newlines within paragraphs
+    .filter((para) => para.length > 0) // Remove empty paragraphs
 
-    return (
-        <div className="license-container">
-            <div className="license-header">
-                <h1>License</h1>
-                <button className="close-license-button" onClick={onClose}>
-                    ✕ Close
-                </button>
-            </div>
-            <div className="license-text-wrapper">
-                {processedText.map((paragraph, index) => (
-                    <p key={index}>{paragraph}</p>
-                ))}
-            </div>
-            <div className="license-footer">
-                <button className="close-license-button" onClick={onClose}>
-                    ✕ Close
-                </button>
-            </div>
-        </div>
-    );
-};
+  return (
+    <div className="license-container">
+      <div className="license-header">
+        <h1>License</h1>
+        <button className="close-license-button" onClick={onClose}>
+          ✕ Close
+        </button>
+      </div>
+      <div className="license-text-wrapper">
+        {processedText.map((paragraph, index) => (
+          <p key={index}>{paragraph}</p>
+        ))}
+      </div>
+      <div className="license-footer">
+        <button className="close-license-button" onClick={onClose}>
+          ✕ Close
+        </button>
+      </div>
+    </div>
+  )
+}
 
-export default LicensePage;
+export default LicensePage
